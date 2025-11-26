@@ -17,20 +17,32 @@ const SplashScreen = ({ navigation }) => {
   // const nav = useNavigation(); // if not passed as prop
 
   useEffect(() => {
-  const check = async () => {
-    const seen = await AsyncStorage.getItem("seenOnboarding");
+    const check = async () => {
+      try {
+        // Order: if token exists -> go to Home
+        const token = await AsyncStorage.getItem('token');
+        if (token) {
+          navigation.replace('Home');
+          return;
+        }
 
-    if (seen === "true") {
-      navigation.replace("Home");
-    } else {
-      navigation.replace("Onboarding");
-    }
-  };
+        // No token: check whether onboarding was seen before
+        const seen = await AsyncStorage.getItem('seenOnboarding');
+        if (seen === 'true') {
+          navigation.replace('SelectRole');
+        } else {
+          navigation.replace('Onboarding');
+        }
+      } catch (e) {
+        console.warn('Splash navigation check failed', e);
+        // fallback to onboarding
+        navigation.replace('Onboarding');
+      }
+    };
 
-  const timer = setTimeout(check, 2000);
-
-  return () => clearTimeout(timer);
-}, []);
+    const timer = setTimeout(check, 1200);
+    return () => clearTimeout(timer);
+  }, [navigation]);
 
 
   return (

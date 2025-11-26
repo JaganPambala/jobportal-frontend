@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useGetRolesQuery } from '../../redux/api/apiSlice';
 
 function SelectRoleScreen({ navigation }) {
   const [selectedRole, setSelectedRole] = useState(null);
+  const { data: rolesData, isLoading, isError } = useGetRolesQuery();
 
   const handleNext = async () => {
     if (!selectedRole) return alert("Please select a role");
@@ -13,6 +15,14 @@ function SelectRoleScreen({ navigation }) {
 
     navigation.navigate("Signup"); // pass to signup
   };
+
+  const roleOptions =
+    Array.isArray(rolesData) && rolesData.length
+      ? rolesData.map((r) => ({ id: r.id || r.key || r.name, key: r.key || r.id || r.name, title: r.title || r.name || r.label }))
+      : [
+          { id: 'employee', key: 'employee', title: "I’m looking for a job" },
+          { id: 'employer', key: 'employer', title: 'I want to hire talent' },
+        ];
 
   return (
     <View style={styles.container}>
@@ -32,53 +42,23 @@ function SelectRoleScreen({ navigation }) {
         Choose how you want to use Jôbizz
       </Text>
 
-      {/* Employee Option */}
-      <TouchableOpacity
-        style={[
-          styles.card,
-          selectedRole === "employee" && styles.cardSelected,
-        ]}
-        onPress={() => setSelectedRole("employee")}
-      >
-        <View style={styles.row}>
-          <Image
-            source={{ uri: "file:///mnt/data/Start.jpg" }}
-            style={styles.icon}
-          />
-          <Text style={styles.cardText}>I’m looking for a job</Text>
-        </View>
+      {isLoading && <Text style={{ marginBottom: 12 }}>Loading roles...</Text>}
+      {isError && <Text style={{ marginBottom: 12, color: '#ff3b30' }}>Failed to load roles — showing defaults.</Text>}
 
-        <View
-          style={[
-            styles.radio,
-            selectedRole === "employee" && styles.radioSelected,
-          ]}
-        />
-      </TouchableOpacity>
+      {roleOptions.map((opt) => (
+        <TouchableOpacity
+          key={opt.key}
+          style={[styles.card, selectedRole === opt.key && styles.cardSelected]}
+          onPress={() => setSelectedRole(opt.key)}
+        >
+          <View style={styles.row}>
+            <Image source={{ uri: 'file:///mnt/data/Start.jpg' }} style={styles.icon} />
+            <Text style={styles.cardText}>{opt.title}</Text>
+          </View>
 
-      {/* Employer Option */}
-      <TouchableOpacity
-        style={[
-          styles.card,
-          selectedRole === "employer" && styles.cardSelected,
-        ]}
-        onPress={() => setSelectedRole("employer")}
-      >
-        <View style={styles.row}>
-          <Image
-            source={{ uri: "file:///mnt/data/Start.jpg" }}
-            style={styles.icon}
-          />
-          <Text style={styles.cardText}>I want to hire talent</Text>
-        </View>
-
-        <View
-          style={[
-            styles.radio,
-            selectedRole === "employer" && styles.radioSelected,
-          ]}
-        />
-      </TouchableOpacity>
+          <View style={[styles.radio, selectedRole === opt.key && styles.radioSelected]} />
+        </TouchableOpacity>
+      ))}
 
       {/* Button */}
       <TouchableOpacity style={styles.button} onPress={handleNext}>
