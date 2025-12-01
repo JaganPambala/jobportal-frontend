@@ -4,30 +4,74 @@ import * as DocumentPicker from 'expo-document-picker';
 import { useUploadEmployeeResumeMutation } from '../../redux/api/apiSlice';
 
 export default function UploadResumeScreen({ navigation }) {
+  console.log('UploadResumeScreen mounted');
   const [uploadResume, { isLoading }] = useUploadEmployeeResumeMutation();
+  const [isPickingFile, setIsPickingFile] = useState(false);
 
   const pickDocument = async () => {
+    console.log('pickDocument called');
     try {
+      console.log('Opening document picker...');
       const res = await DocumentPicker.getDocumentAsync({ type: '*/*' });
-      if (res.type === 'success') {
-        const { uri, name } = res;
-        // Build FormData
-        const formData = new FormData();
-        const fileType = name.split('.').pop();
-        const mimeType = /pdf/i.test(fileType) ? 'application/pdf' : 'application/octet-stream';
-        formData.append('resume', { uri, name, type: mimeType });
+      
+      console.log('DocumentPicker response:', res);
+      
+      // Handle response - newer Expo returns { canceled, assets }
+      if (res.canceled) {
+        console.log('Document selection cancelled');
+        return;
+      }
+      
+      // Get the first asset from the assets array
+      const asset = res.assets?.[0];
+      if (!asset) {
+        console.log('No asset returned');
+        return;
+      }
+      
+      const { uri, name, mimeType: assetMimeType } = asset;
+      
+      console.log('Selected file:', { uri, name, assetMimeType });
+      
+      // Build FormData with proper multipart structure
+      const formData = new FormData();
+      
+      // Determine MIME type based on file extension or provided type
+      const fileType = name.split('.').pop()?.toLowerCase();
+      let mimeType = assetMimeType || 'application/octet-stream';
+      if (/pdf/i.test(fileType)) mimeType = 'application/pdf';
+      else if (/doc$/.test(fileType)) mimeType = 'application/msword';
+      else if (/docx/i.test(fileType)) mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      
+      console.log('File details:', { name, fileType, mimeType });
+      
+      // Append file to FormData with key matching backend expectation
+      formData.append('resume', {
+        uri,
+        name,
+        type: mimeType,
+      });
 
-        try {
-          const result = await uploadResume(formData).unwrap();
-          Alert.alert('Success', 'Resume uploaded successfully');
-          navigation.goBack();
-        } catch (err) {
-          
-          Alert.alert('Error', err?.data?.message || err?.message || 'Failed to upload resume');
-        }
+      console.log("-------------------------------------------")
+      console.log('Uploading file:', name, 'with MIME type:', mimeType);
+      
+      try {
+        const result = await uploadResume(formData).unwrap();
+        console.log('Upload response:', result);
+        Alert.alert('Success', 'Resume uploaded successfully');
+        navigation.goBack();
+      } catch (err) {
+        console.error('Upload error details:', {
+          message: err?.message,
+          data: err?.data,
+          status: err?.status,
+          originalStatus: err?.originalStatus,
+        });
+        Alert.alert('Error', err?.data?.message || err?.message || 'Failed to upload resume');
       }
     } catch (err) {
-      
+      console.error('Document picker error:', err);
+      Alert.alert('Error', 'Failed to open document picker');
     }
   };
 
@@ -36,8 +80,8 @@ export default function UploadResumeScreen({ navigation }) {
       <Text style={styles.title}>Upload Resume</Text>
       <Text style={styles.subtitle}>Select a PDF or DOC file to upload as your resume</Text>
 
-      <TouchableOpacity style={styles.pickBtn} onPress={pickDocument} disabled={isLoading}>
-        {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.pickBtnText}>Pick File</Text>}
+      <TouchableOpacity style={styles.pickBtn} onPress={pickDocument} disabled={isLoading || isPickingFile}>
+        {isLoading || isPickingFile ? <ActivityIndicator color="#fff" /> : <Text style={styles.pickBtnText}>Pick File</Text>}
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.skipBtn} onPress={() => navigation.goBack()}>

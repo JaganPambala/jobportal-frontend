@@ -4,6 +4,19 @@ import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useGetEmployeeMeQuery, useDeleteEmployeeResumeMutation, useUploadEmployeeAvatarMutation, useAddEmployeeEducationMutation, useUpdateEmployeeEducationMutation, useDeleteEmployeeEducationMutation } from '../../redux/api/apiSlice';
 import * as ImagePicker from 'expo-image-picker';
 
+// Helper function to construct full avatar URL
+const getFullAvatarUrl = (avatarPath) => {
+  if (!avatarPath) return "https://ui-avatars.com/api/?name=Jagan";
+  const baseUrl = "http://10.0.2.2:5000";
+  return avatarPath.startsWith('http') ? avatarPath : `${baseUrl}${avatarPath}`;
+};
+
+// Helper function to extract filename from path
+const getFileName = (filePath) => {
+  if (!filePath) return 'Unknown file';
+  return filePath.split('/').pop();
+};
+
 function EmployeeProfileScreen({ navigation }) {
   // Fetch user data from backend
   const { data: userData, isLoading, isError } = useGetEmployeeMeQuery();
@@ -48,7 +61,17 @@ function EmployeeProfileScreen({ navigation }) {
 
   const handleViewResume = () => {
     if (user?.resumeUrl) {
-      Linking.openURL(user?.resumeUrl).catch((err) => Alert.alert('Error', 'Unable to open resume'));
+      // Construct full URL if resumeUrl is a relative path
+      const baseUrl = "http://10.0.2.2:5000";
+      const fullUrl = user.resumeUrl.startsWith('http') 
+        ? user.resumeUrl 
+        : `${baseUrl}${user.resumeUrl}`;
+      
+      console.log('Opening resume URL:', fullUrl);
+      Linking.openURL(fullUrl).catch((err) => {
+        console.error('Error opening resume:', err);
+        Alert.alert('Error', 'Unable to open resume');
+      });
     }
   };
 
@@ -78,15 +101,18 @@ function EmployeeProfileScreen({ navigation }) {
         const type = match ? `image/${match[1]}` : `image`;
         formData.append('avatar', { uri: asset.uri, name, type });
         try {
-          await uploadAvatar(formData).unwrap();
+          const result = await uploadAvatar(formData).unwrap();
+          console.log('Avatar upload response:', result);
           Alert.alert('Success', 'Avatar updated');
+          // Refetch user data to get the updated avatar URL
+          // This will trigger useGetEmployeeMeQuery to refetch
         } catch (err) {
-          
+          console.error('Avatar upload error:', err);
           Alert.alert('Error', err?.data?.message || err?.message || 'Failed to upload avatar');
         }
       }
     } catch (err) {
-      
+      console.error('Image picker error:', err);
     }
   };
 
@@ -137,7 +163,7 @@ function EmployeeProfileScreen({ navigation }) {
       <View style={styles.profileCard}>
         <TouchableOpacity onPress={pickAvatar}>
           <Image
-            source={{ uri: user?.avatar || "https://ui-avatars.com/api/?name=Jagan" }}
+            source={{ uri: getFullAvatarUrl(user?.avatar) }}
             style={styles.profileImage}
           />
         </TouchableOpacity>
@@ -244,18 +270,24 @@ function EmployeeProfileScreen({ navigation }) {
         />
 
         {user?.resumeUrl ? (
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <TouchableOpacity style={styles.resumeBtn} onPress={handleViewResume}>
-              <Ionicons name="document-text-outline" size={22} color="#2E5AAC" />
-              <Text style={styles.resumeText}>View Uploaded Resume</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.uploadResumeBtn, { backgroundColor: '#E23B3B' }]} onPress={handleDeleteResume} disabled={isDeleting}>
-              {isDeleting ? (
-                <Ionicons name="refresh" size={18} color="#fff" />
-              ) : (
-                <Text style={styles.uploadResumeText}>Delete</Text>
-              )}
-            </TouchableOpacity>
+          <View>
+            <View style={{ marginBottom: 12, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#E6E8EB' }}>
+              <Text style={{ fontSize: 14, color: '#666', marginBottom: 4 }}>Uploaded File:</Text>
+              <Text style={{ fontSize: 16, fontWeight: '600', color: '#222' }}>{getFileName(user.resumeUrl)}</Text>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity style={styles.resumeBtn} onPress={handleViewResume}>
+                <Ionicons name="document-text-outline" size={22} color="#2E5AAC" />
+                <Text style={styles.resumeText}>View Resume</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.uploadResumeBtn, { backgroundColor: '#E23B3B' }]} onPress={handleDeleteResume} disabled={isDeleting}>
+                {isDeleting ? (
+                  <Ionicons name="refresh" size={18} color="#fff" />
+                ) : (
+                  <Text style={styles.uploadResumeText}>Delete</Text>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         ) : (
           <TouchableOpacity style={styles.uploadResumeBtn} onPress={() => navigation.navigate('UploadResume')}>

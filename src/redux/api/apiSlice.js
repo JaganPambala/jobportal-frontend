@@ -3,21 +3,35 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 // Update baseUrl to your backend API
 const baseUrl = "http://10.0.2.2:5000";
 
+// Custom baseQuery that handles FormData properly
+const baseQueryWithFormData = fetchBaseQuery({
+  baseUrl,
+  prepareHeaders: (headers, { getState }) => {
+    try {
+      const token = getState().auth?.token;
+      if (token) headers.set('authorization', `Bearer ${token}`);
+    } catch (e) {
+      // ignore if getState not available
+    }
+    return headers;
+  },
+});
+
+// Wrapper to handle FormData without stringifying
+const baseQueryWrapper = async (args, api, extraOptions) => {
+  // If body is FormData, don't let fetchBaseQuery stringify it
+  if (args.body instanceof FormData) {
+    // Remove Content-Type header so fetch can set it with boundary
+    const clonedArgs = { ...args };
+    return baseQueryWithFormData(clonedArgs, api, extraOptions);
+  }
+  return baseQueryWithFormData(args, api, extraOptions);
+};
+
 export const api = createApi({
   reducerPath: 'reduxApi',
   tagTypes: ['Job', 'Applicants', 'EmployeeMe', 'Applications'],
-  baseQuery: fetchBaseQuery({
-    baseUrl,
-    prepareHeaders: (headers, { getState }) => {
-      try {
-        const token = getState().auth?.token;
-        if (token) headers.set('authorization', `Bearer ${token}`);
-      } catch (e) {
-        // ignore if getState not available
-      }
-      return headers;
-    },
-  }),
+  baseQuery: baseQueryWrapper,
   endpoints: (builder) => ({
     getRoles: builder.query({
       query: () => '/roles',
@@ -89,11 +103,45 @@ export const api = createApi({
       invalidatesTags: ['EmployeeMe'],
     }),
     uploadEmployeeAvatar: builder.mutation({
-      query: (formData) => ({ url: '/employee/me/avatar', method: 'POST', body: formData }),
+      query: (formData) => {
+        // FormData will be sent as-is without JSON serialization
+        // The browser will automatically set Content-Type: multipart/form-data with boundary
+        return {
+          url: '/employee/me/avatar',
+          method: 'POST',
+          body: formData,
+        };
+      },
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data: result } = await queryFulfilled;
+          // Update the getEmployeeMe cache with the new avatar URL
+          dispatch(
+            api.util.updateQueryData('getEmployeeMe', undefined, (draft) => {
+              if (result?.avatarUrl) {
+                draft.avatar = result.avatarUrl;
+              }
+              if (result?.employee?.avatar) {
+                draft.avatar = result.employee.avatar;
+              }
+            })
+          );
+        } catch (err) {
+          console.error('Avatar upload error:', err);
+        }
+      },
       invalidatesTags: ['EmployeeMe'],
     }),
     uploadEmployeeResume: builder.mutation({
-      query: (formData) => ({ url: '/employee/me/resume', method: 'POST', body: formData }),
+      query: (formData) => {
+        // FormData will be sent as-is without JSON serialization
+        // The browser will automatically set Content-Type: multipart/form-data with boundary
+        return {
+          url: '/employee/me/resume',
+          method: 'POST',
+          body: formData,
+        };
+      },
       invalidatesTags: ['EmployeeMe'],
     }),
     deleteEmployeeResume: builder.mutation({
