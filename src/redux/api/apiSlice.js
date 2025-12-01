@@ -30,7 +30,7 @@ const baseQueryWrapper = async (args, api, extraOptions) => {
 
 export const api = createApi({
   reducerPath: 'reduxApi',
-  tagTypes: ['Job', 'Applicants', 'EmployeeMe', 'Applications'],
+  tagTypes: ['Job', 'Applicants', 'EmployeeMe', 'Applications', 'Category'],
   baseQuery: baseQueryWrapper,
   endpoints: (builder) => ({
     getRoles: builder.query({
@@ -39,13 +39,35 @@ export const api = createApi({
     getCategories: builder.query({
       query: () => '/categories',
     }),
+    // Parent categories (top-level categories)
+    getParentCategories: builder.query({
+      query: () => '/category/categories/parents',
+      providesTags: ['Category'],
+    }),
     getCategoryRoles: builder.query({
       // full path: http://localhost:5000/category/categories/roles
       query: () => '/category/categories/roles',
     }),
+    // Children (subcategories) for a given parent category
+    getCategoryChildren: builder.query({
+      query: (parentId) => `/category/categories/${parentId}/children`,
+      providesTags: (result, error, parentId) => [{ type: 'Category', id: parentId }],
+    }),
     getGroupedCategories: builder.query({
       // full path: http://localhost:5000/category/categories/grouped
       query: () => '/category/categories/grouped',
+    }),
+
+    // Jobs for a specific category (with optional pagination)
+    getJobsByCategory: builder.query({
+      query: ({ categoryId, page = 1, limit = 10 } = {}) => {
+        const parts = [];
+        if (page) parts.push(`page=${encodeURIComponent(String(page))}`);
+        if (limit) parts.push(`limit=${encodeURIComponent(String(limit))}`);
+        const qs = parts.join('&');
+        return `/job/by-category/${categoryId}${qs ? `?${qs}` : ''}`;
+      },
+      providesTags: (result) => (result ? [{ type: 'Job', id: 'LIST' }] : [{ type: 'Job', id: 'LIST' }]),
     }),
     login: builder.mutation({
       query: (credentials) => ({
@@ -85,6 +107,12 @@ export const api = createApi({
     }),
     getEmployerMe: builder.query({
       query: () => '/employer/me',
+      transformResponse: (response) => {
+        // Backend returns { message, employer }, extract the employer object
+        const employer = response?.employer || response;
+        // If companyLogo is a relative path, it will be handled by the component's getFullLogoUrl
+        return employer;
+      },
     }),
     createEmployerProfile: builder.mutation({
       query: (payload) => ({
@@ -93,6 +121,41 @@ export const api = createApi({
         body: payload,
       }),
     }),
+    updateEmployerDetails: builder.mutation({
+      query: (payload) => ({
+        url: '/employer/details',
+        method: 'PUT',
+        body: payload,
+      }),
+      invalidatesTags: ['EmployerMe'],
+    }),
+    uploadEmployerLogo: builder.mutation({
+      query: (formData) => {
+        return {
+          url: '/employer/me/logo',
+          method: 'POST',
+          body: formData,
+        };
+      },
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data: result } = await queryFulfilled;
+          // Update the getEmployerMe cache with the new logo URL
+          dispatch(
+            api.util.updateQueryData('getEmployerMe', undefined, (draft) => {
+              if (result?.logoUrl) {
+                draft.companyLogo = result.logoUrl;
+              }
+              if (result?.employer?.companyLogo) {
+                draft.companyLogo = result.employer.companyLogo;
+              }
+            })
+          );
+        } catch (err) {
+          console.error('Logo upload error:', err);
+        }
+      },
+    }),
     // Employee profile endpoints
     getEmployeeMe: builder.query({
       query: () => '/employee/me',
@@ -100,6 +163,11 @@ export const api = createApi({
     }),
     updateEmployeeProfile: builder.mutation({
       query: (payload) => ({ url: '/employee/me', method: 'PATCH', body: payload }),
+      invalidatesTags: ['EmployeeMe'],
+    }),
+    // Update only skills for the employee
+    updateEmployeeSkills: builder.mutation({
+      query: (skills) => ({ url: '/employee/me/skills', method: 'PATCH', body: { skills } }),
       invalidatesTags: ['EmployeeMe'],
     }),
     uploadEmployeeAvatar: builder.mutation({
@@ -289,7 +357,9 @@ export const api = createApi({
 export const {
   useGetRolesQuery,
   useGetCategoriesQuery,
+  useGetParentCategoriesQuery,
   useGetCategoryRolesQuery,
+  useGetCategoryChildrenQuery,
   useLoginMutation,
   useRegisterMutation,
   useUpdateJobPreferencesMutation,
@@ -299,11 +369,15 @@ export const {
   useGetEmployerMeQuery,
   useLazyGetEmployerMeQuery,
   useCreateEmployerProfileMutation,
+  useUpdateEmployerDetailsMutation,
+  useUploadEmployerLogoMutation,
+  useUpdateEmployeeSkillsMutation,
   usePostJobMutation,
   useGetGroupedCategoriesQuery,
   useGetEmployerJobsQuery,
   useGetApplicantsForJobQuery,
   useGetEmployeeApplicationsQuery,
+  useGetJobsByCategoryQuery,
   useSearchJobsQuery,
   useSetJobActivationMutation,
   useDeleteJobMutation,

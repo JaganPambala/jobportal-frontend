@@ -12,6 +12,14 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useGetJobByIdQuery, useApplyJobMutation } from "../../redux/api/apiSlice";
 
+const baseUrl = 'http://10.0.2.2:5000';
+const getFullLogoUrl = (logoPath) => {
+  if (!logoPath) return 'file:///mnt/data/Start.jpg';
+  if (typeof logoPath !== 'string') return 'file:///mnt/data/Start.jpg';
+  if (logoPath.startsWith('http') || logoPath.startsWith('file')) return logoPath;
+  return `${baseUrl}${logoPath.startsWith('/') ? '' : '/'}${logoPath}`;
+};
+
 const JobDetailsScreen = ({ route, navigation }) => {
   const { jobId } = route.params;
 
@@ -71,7 +79,7 @@ const JobDetailsScreen = ({ route, navigation }) => {
 
         {/* Company Logo */}
         <Image
-          source={{ uri: job.employerId.companyLogo }}
+          source={{ uri: getFullLogoUrl(job?.employerId?.companyLogo) }}
           style={styles.companyLogo}
         />
 

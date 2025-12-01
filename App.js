@@ -10,6 +10,8 @@ import SignupScreen from "./src/screens/Auth/signup.js";
 import LoginScreen from "./src/screens/Auth/signIn.js";
 import JobPreferencesScreen from "./src/screens/preferences/JobPreferencesScreen.js";
 import CategoriesScreen from "./src/screens/Categories/CategoriesScreen.js";
+import SubCategoriesScreen from "./src/screens/Categories/SubCategoriesScreen.js";
+import CategoryJobsScreen from "./src/screens/Categories/CategoryJobScreen.js";
 import  HomeScreen from "./src/screens/Home/home.js";
 import JobDetailsScreen from "./src/screens/JobDetails/JobDetails.js";
 import EmployerDashboard from "./src/screens/employerDashboard/employerDashboard.js";
@@ -23,6 +25,7 @@ import EditPersonalInfo from "./src/screens/Employee/EditPersonalInfo.js";
 import ApplySuccessScreen from "./src/screens/Apply/succeses.js";
 import EmployeeAplications from "./src/screens/Apply/EmployeeAplications.js";
 import SearchScreen from "./src/screens/Search/SearchScreen.js";
+import EmployerProfileScreen from "./src/screens/employerDashboard/EmployerProfile.js";
 const RootStack = createNativeStackNavigator();
 const AuthStack = createNativeStackNavigator();
 const EmployeeStack = createNativeStackNavigator();
@@ -38,6 +41,10 @@ function AuthStackScreen() {
       <AuthStack.Screen name="Login" component={LoginScreen} />
       <AuthStack.Screen name="JobPreferences" component={JobPreferencesScreen} />
       <AuthStack.Screen name="Categories" component={CategoriesScreen} />
+      <AuthStack.Screen name="SubCategories" component={SubCategoriesScreen} />
+      <AuthStack.Screen name="CategoryJobs" component={CategoryJobsScreen} />
+      <AuthStack.Screen name="JobDetails" component={JobDetailsScreen} />
+      <AuthStack.Screen name="ApplySuccess" component={ApplySuccessScreen} />
     </AuthStack.Navigator>
   );
 }
@@ -46,14 +53,17 @@ function EmployeeStackScreen() {
   return (
     <EmployeeStack.Navigator screenOptions={{ headerShown: false }}>
       <EmployeeStack.Screen name="Home" component={HomeScreen} />
+      <EmployeeStack.Screen name="JobPreferences" component={JobPreferencesScreen} />
       <EmployeeStack.Screen name="JobDetails" component={JobDetailsScreen} />
       <EmployeeStack.Screen name="EmployeeProfile" component={EmployeeProfileScreen} />
       <EmployeeStack.Screen name="UploadResume" component={UploadResumeScreen} />
       <EmployeeStack.Screen name="EditPersonalInfo" component={EditPersonalInfo} />
       <EmployeeStack.Screen name="ApplySuccess" component={ApplySuccessScreen} />
       <EmployeeStack.Screen name="EmployeeAplications" component={EmployeeAplications} />
-      <EmployeeStack.Screen name="Search" component={SearchScreen} />
       <EmployeeStack.Screen name="Categories" component={CategoriesScreen} />
+      <EmployeeStack.Screen name="SubCategories" component={SubCategoriesScreen} />
+      <EmployeeStack.Screen name="CategoryJobs" component={CategoryJobsScreen} />
+      <EmployeeStack.Screen name="Search" component={SearchScreen} />
     </EmployeeStack.Navigator>
   );
 }
@@ -63,10 +73,15 @@ function EmployerStackScreen() {
     <EmployerStack.Navigator screenOptions={{ headerShown: false }}>
       <EmployerStack.Screen name="EmployerDashboard" component={EmployerDashboard} />
       <EmployerStack.Screen name="CreateEmployerProfile" component={CreateEmployerProfile} />
+      <EmployerStack.Screen name="EmployerProfile" component={EmployerProfileScreen} />
       <EmployerStack.Screen name="PostJob" component={PostJobScreen} />
       <EmployerStack.Screen name="ManageJobs" component={ManageJobsScreen} />
       <EmployerStack.Screen name="ApplicantsList" component={ApplicantsListScreen} />
       <EmployerStack.Screen name="Search" component={SearchScreen} />
+      <EmployerStack.Screen name="Categories" component={CategoriesScreen} />
+      <EmployerStack.Screen name="SubCategories" component={SubCategoriesScreen} />
+      <EmployerStack.Screen name="CategoryJobs" component={CategoryJobsScreen} />
+      <EmployerStack.Screen name="JobDetails" component={JobDetailsScreen} />
     </EmployerStack.Navigator>
   );
 }

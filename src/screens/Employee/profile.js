@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Alert, Linking, Modal, TextInput } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import { useGetEmployeeMeQuery, useDeleteEmployeeResumeMutation, useUploadEmployeeAvatarMutation, useAddEmployeeEducationMutation, useUpdateEmployeeEducationMutation, useDeleteEmployeeEducationMutation } from '../../redux/api/apiSlice';
+import { useGetEmployeeMeQuery, useDeleteEmployeeResumeMutation, useUploadEmployeeAvatarMutation, useAddEmployeeEducationMutation, useUpdateEmployeeEducationMutation, useDeleteEmployeeEducationMutation, useUpdateEmployeeSkillsMutation } from '../../redux/api/apiSlice';
 import * as ImagePicker from 'expo-image-picker';
 
 // Helper function to construct full avatar URL
@@ -25,10 +25,9 @@ function EmployeeProfileScreen({ navigation }) {
   const [addEducation] = useAddEmployeeEducationMutation();
   const [updateEducation] = useUpdateEmployeeEducationMutation();
   const [deleteEducation] = useDeleteEmployeeEducationMutation();
-  // Education modal state & other controls. Must be declared before early returns
-  const [educationModalOpen, setEducationModalOpen] = useState(false);
-  const [editingEducation, setEditingEducation] = useState(null);
-  const [eduForm, setEduForm] = useState({ degree: '', specialization: '', institution: '', passedOutYear: '' });
+  const [updateSkills, { isLoading: isUpdatingSkills }] = useUpdateEmployeeSkillsMutation();
+
+  // Prepare user object
   const user = userData || {
     fullName: "Jagan Pambala",
     email: "jagan@gmail.com",
@@ -55,6 +54,19 @@ function EmployeeProfileScreen({ navigation }) {
     },
     selectedCategories: ["Software Development", "IT Services"],
   };
+
+  // All state hooks AFTER user is defined
+  const [educationModalOpen, setEducationModalOpen] = useState(false);
+  const [editingEducation, setEditingEducation] = useState(null);
+  const [eduForm, setEduForm] = useState({ degree: '', specialization: '', institution: '', passedOutYear: '' });
+  const [skillsModalOpen, setSkillsModalOpen] = useState(false);
+  const [localSkills, setLocalSkills] = useState(user?.skills || []);
+  const [newSkill, setNewSkill] = useState('');
+
+  // All effects BEFORE early returns
+  useEffect(() => {
+    setLocalSkills(user?.skills || []);
+  }, [user?.skills]);
 
   if (isLoading) return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>Loading profile...</Text></View>;
   if (isError) return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>Failed to load profile</Text></View>;
@@ -120,6 +132,37 @@ function EmployeeProfileScreen({ navigation }) {
 
   const openAddEducation = () => { setEduForm({ degree: '', specialization: '', institution: '', passedOutYear: '' }); setEditingEducation(null); setEducationModalOpen(true); };
   const openEditEducation = (edu) => { setEduForm({ degree: edu.degree, specialization: edu.specialization, institution: edu.institution, passedOutYear: edu.passedOutYear }); setEditingEducation(edu); setEducationModalOpen(true); };
+  const openEditSkills = () => {
+    setNewSkill('');
+    setLocalSkills(user?.skills ? [...user.skills] : []);
+    setSkillsModalOpen(true);
+  };
+
+  const addSkillToLocal = () => {
+    const s = newSkill.trim();
+    if (!s) return;
+    if (localSkills.includes(s)) {
+      setNewSkill('');
+      return;
+    }
+    setLocalSkills((prev) => [...prev, s]);
+    setNewSkill('');
+  };
+
+  const removeLocalSkill = (skill) => {
+    setLocalSkills((prev) => prev.filter((s) => s !== skill));
+  };
+
+  const submitSkills = async () => {
+    try {
+      await updateSkills(localSkills).unwrap();
+      Alert.alert('Success', 'Skills updated');
+      setSkillsModalOpen(false);
+    } catch (err) {
+      console.error('Update skills error', err);
+      Alert.alert('Error', err?.data?.message || err?.message || 'Failed to update skills');
+    }
+  };
 
   const submitEducation = async () => {
     const payload = { ...eduForm };
@@ -250,7 +293,7 @@ function EmployeeProfileScreen({ navigation }) {
       <View style={styles.section}>
         <SectionHeader
           title="Skills"
-          onEdit={() => navigation.navigate("EditSkills")}
+          onEdit={openEditSkills}
         />
 
         <View style={styles.skillsRow}>
@@ -261,6 +304,42 @@ function EmployeeProfileScreen({ navigation }) {
           ))}
         </View>
       </View>
+
+      {/* Skills Modal */}
+      <Modal visible={skillsModalOpen} animationType="slide" transparent>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <View style={{ width: '92%', backgroundColor: '#fff', padding: 18, borderRadius: 12 }}>
+            <Text style={{ fontSize: 18, fontWeight: '700', marginBottom: 12 }}>Edit Skills</Text>
+
+            <View style={{ flexDirection: 'row', marginBottom: 10 }}>
+              <TextInput placeholder="Add skill" value={newSkill} onChangeText={setNewSkill} style={[styles.input, { flex: 1, marginRight: 8 }]} />
+              <TouchableOpacity onPress={addSkillToLocal} style={{ backgroundColor: '#2E5AAC', paddingHorizontal: 14, justifyContent: 'center', borderRadius: 8 }}>
+                <Text style={{ color: '#fff', fontWeight: '700' }}>Add</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+              {localSkills.map((s) => (
+                <View key={s} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#E4ECFF', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20, marginRight: 8, marginBottom: 8 }}>
+                  <Text style={{ color: '#2E5AAC', fontWeight: '600', marginRight: 8 }}>{s}</Text>
+                  <TouchableOpacity onPress={() => removeLocalSkill(s)}>
+                    <MaterialIcons name="close" size={16} color="#2E5AAC" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }}>
+              <TouchableOpacity onPress={() => setSkillsModalOpen(false)} style={{ padding: 10 }}>
+                <Text>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={submitSkills} style={{ padding: 10 }}>
+                <Text style={{ color: '#2E5AAC', fontWeight: '700' }}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Resume */}
       <View style={styles.section}>
@@ -333,7 +412,13 @@ function EmployeeProfileScreen({ navigation }) {
 const SectionHeader = ({ title, onEdit }) => (
   <View style={styles.sectionHeader}>
     <Text style={styles.sectionTitle}>{title}</Text>
-    <TouchableOpacity onPress={onEdit}>
+    <TouchableOpacity
+      onPress={onEdit}
+      activeOpacity={0.7}
+      hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+      style={{ padding: 6, minWidth: 44, alignItems: 'center', justifyContent: 'center' }}
+      accessibilityRole="button"
+    >
       <MaterialIcons name="edit" size={20} color="#2E5AAC" />
     </TouchableOpacity>
   </View>

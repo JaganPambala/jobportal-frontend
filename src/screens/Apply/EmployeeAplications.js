@@ -11,6 +11,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { useGetEmployeeApplicationsQuery } from '../../redux/api/apiSlice';
 import { SafeAreaView } from "react-native-safe-area-context";
 
+const BASE_URL = 'http://10.0.2.2:5000';
+
+function getFullLogoUrl(logo) {
+  if (!logo) return 'https://via.placeholder.com/45';
+  if (typeof logo !== 'string') return 'https://via.placeholder.com/45';
+  if (logo.startsWith('http') || logo.startsWith('data:')) return logo;
+  if (logo.startsWith('/')) return `${BASE_URL}${logo}`;
+  return `${BASE_URL}/${logo}`;
+}
+
 const STATUS_COLORS = {
   Applied: { bg: "#EAF3FF", text: "#2E5AAC" },
   Viewed: { bg: "#FFF3D9", text: "#C28400" },
@@ -90,7 +100,7 @@ export default function ApplicationsScreen({ navigation }) {
 
           return (
             <View style={styles.card}>
-                <Image source={{ uri: item.companyLogo }} style={styles.logo} />
+                <Image source={{ uri: getFullLogoUrl(item.companyLogo) }} style={styles.logo} />
 
               <View style={{ flex: 1 }}>
                 <Text style={styles.jobTitle}>{item.jobTitle}</Text>

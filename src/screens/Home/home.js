@@ -18,6 +18,14 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useGetFeaturedJobsQuery, useGetPopularJobsQuery } from '../../redux/api/apiSlice';
 import ProfileMenu from '../../components/ProfileComponent';
 
+const baseUrl = 'http://10.0.2.2:5000';
+const getFullLogoUrl = (logoPath) => {
+  if (!logoPath) return 'file:///mnt/data/Start.jpg';
+  if (typeof logoPath !== 'string') return 'file:///mnt/data/Start.jpg';
+  if (logoPath.startsWith('http') || logoPath.startsWith('file')) return logoPath;
+  return `${baseUrl}${logoPath.startsWith('/') ? '' : '/'}${logoPath}`;
+};
+
 // Use your uploaded preview image if you want a quick visual (not required)
 const PREVIEW_URI = "file:///mnt/data/Homepage 6.jpg"; // <- your uploaded screenshot (for preview/testing)
 
@@ -68,7 +76,7 @@ function FeaturedCard({ item, navigation, user }) {
   return (
     <View style={[styles.featuredCard, { backgroundColor: item.color }]}>
       <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <Image source={{ uri: item.logo }} style={styles.featuredLogo} />
+        <Image source={{ uri: getFullLogoUrl(item.logo) }} style={styles.featuredLogo} />
          
         <View style={{ marginLeft: 12, flex: 1 }}>
           <Text style={styles.featuredTitle} numberOfLines={1}>{item.title}</Text>
@@ -105,7 +113,7 @@ function FeaturedCard({ item, navigation, user }) {
 function PopularCard({ item }) {
   return (
     <View style={styles.popCard}>
-      <Image source={{ uri: item.logo }} style={styles.popLogo} />
+      <Image source={{ uri: getFullLogoUrl(item.logo) }} style={styles.popLogo} />
       <Text style={styles.popTitle} numberOfLines={2}>{item.title}</Text>
       <Text style={styles.popCompany} numberOfLines={1}>{item.company}</Text>
       <Text style={styles.popSalary} numberOfLines={1}>{item.salary}</Text>
@@ -249,7 +257,8 @@ function HomeScreen({ navigation }) {
           <Ionicons name="bookmark-outline" size={22} color="#9AA0A6" />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.tabItem}>
+        <TouchableOpacity style={styles.tabItem}
+        onPress={() => navigation.navigate("Categories")}>
           <Ionicons name="grid-outline" size={22} color="#9AA0A6" />
         </TouchableOpacity>
       </View>

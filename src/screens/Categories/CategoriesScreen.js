@@ -1,121 +1,132 @@
 import React from "react";
-import { View, Text, TouchableOpacity, Image, StyleSheet, ScrollView } from "react-native";
+import { 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  Image, 
+  StyleSheet, 
+  ScrollView 
+} from "react-native";
+
 import { Ionicons } from "@expo/vector-icons";
+import { useGetParentCategoriesQuery } from "../../redux/api/apiSlice";
 
-const categoriesPopular = [
-  { id: 1, title: "UX Designer", image: "" },
-  { id: 2, title: "Web Developer", image: "" },
-  { id: 3, title: "Software Engineer", image: "" },
-  { id: 4, title: "Product Manager", image: "" },
-];
+export default function CategoriesScreen({ navigation }) {
+  const { data, isLoading, isError } = useGetParentCategoriesQuery();
 
-const categoriesTrending = [
-  { id: 5, title: "Accountant", image: "" },
-  { id: 6, title: "Marketing", image: "" },
-  { id: 7, title: "App Developer", image: "" },
-  { id: 8, title: "Graphic Designer", image: "" },
-];
+  if (isLoading) return <Text style={styles.loading}>Loading...</Text>;
+  if (isError) return <Text style={styles.error}>Failed to load categories</Text>;
 
- function CategoriesScreen({ navigation }) {
-  const renderCategory = (item) => (
-    <TouchableOpacity key={item.id} style={styles.card}>
-      <Image  source={{ uri: "file:///mnt/data/Start.jpg" }} />
-       
-      <Text style={styles.cardTitle}>{item.title}</Text>
-    </TouchableOpacity>
-  );
+  const parents = data || [];
 
   return (
     <ScrollView style={styles.container}>
-      {/* Header */}
+      {/* HEADER */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() =>navigation.replace("Home") }>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={26} color="#000" />
         </TouchableOpacity>
 
         <Text style={styles.title}>Categories</Text>
 
-        <View style={{ width: 26 }} /> 
+        {/* Right side placeholder for balance */}
+        <View style={{ width: 26 }} />
       </View>
 
-      {/* Popular */}
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Popular</Text>
-        <Text style={styles.seeAll}>See all</Text>
-      </View>
-
+      {/* GRID */}
       <View style={styles.grid}>
-        {categoriesPopular.map(renderCategory)}
-      </View>
+        {parents.map((item) => (
+          <TouchableOpacity
+            key={item._id}
+            style={styles.card}
+            onPress={() =>
+              navigation.navigate("SubCategories", { parentId: item._id })
+            }
+          >
+            <Image
+              source={{
+                uri: item.icon || "https://via.placeholder.com/80",
+              }}
+              style={styles.icon}
+            />
 
-      {/* Trending */}
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Trending</Text>
-        <Text style={styles.seeAll}>See all</Text>
-      </View>
-
-      <View style={styles.grid}>
-        {categoriesTrending.map(renderCategory)}
+            <Text style={styles.cardTitle}>{item.name}</Text>
+          </TouchableOpacity>
+        ))}
       </View>
     </ScrollView>
   );
 }
 
+/* ------------------------ STYLES ------------------------ */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F8F9FC",
     paddingHorizontal: 20,
   },
+
+  loading: {
+    textAlign: "center",
+    marginTop: 40,
+    fontSize: 16,
+  },
+
+  error: {
+    textAlign: "center",
+    marginTop: 40,
+    fontSize: 16,
+    color: "red",
+  },
+
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 40,
-    marginBottom: 20,
+    marginTop: 45,
+    marginBottom: 25,
   },
+
   title: {
     fontSize: 22,
     fontWeight: "700",
+    color: "#0A0A0A",
   },
-  sectionHeader: { 
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 10,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  seeAll: {
-    color: "#A0A0A0",
-    fontSize: 14,
-  },
+
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    marginVertical: 10,
+    paddingBottom: 20,
   },
+
   card: {
     width: "48%",
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 18,
+    paddingVertical: 22,
     alignItems: "center",
-    marginBottom: 15,
-    elevation: 1,
+    marginBottom: 20,
+
+    // soft shadow
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
   },
+
   icon: {
-    width: 60,
-    height: 60,
-    marginBottom: 10,
+    width: 70,
+    height: 70,
+    marginBottom: 12,
     resizeMode: "contain",
   },
+
   cardTitle: {
     fontSize: 15,
     fontWeight: "600",
+    color: "#1B1B1B",
+    textAlign: "center",
   },
 });
-
-export default CategoriesScreen;    

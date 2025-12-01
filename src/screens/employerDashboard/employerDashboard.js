@@ -2,12 +2,18 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import ProfileMenu from "../../components/ProfileComponent";
 
 export default function EmployerDashboard({ navigation }) {
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>Welcome Employer 👋</Text>
-      <Text style={styles.subtitle}>Manage & post jobs easily</Text>
+      <View style={styles.headerRowTop}>
+        <View>
+          <Text style={styles.title}>Welcome Employer 👋</Text>
+          <Text style={styles.subtitle}>Manage & post jobs easily</Text>
+        </View>
+        <ProfileMenu navigation={navigation} useIconTrigger={true} />
+      </View>
 
       {/* Quick Actions */}
       <View style={styles.actionsRow}>
@@ -71,6 +77,7 @@ export default function EmployerDashboard({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { padding: 20, backgroundColor: "#F8F8FB" },
+  headerRowTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   title: { fontSize: 26, fontWeight: "800", color: "#111" },
   subtitle: { color: "#6C7A92", marginBottom: 20 },
 

@@ -29,7 +29,9 @@ export default function ProfileMenu({ navigation, useIconTrigger = false }) {
     dispatch(reduxApi.util.resetApiState());
 
     setOpen(false);
-    navigation.navigate("Login");
+    
+    // Redux state change will automatically trigger root navigator to show AuthStack
+    // No need to navigate explicitly; the root will re-evaluate based on auth state
   };
 
   return (
