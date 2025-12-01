@@ -28,8 +28,9 @@ async function bootstrap() {
 				console.warn('Failed to parse stored user JSON', parseErr);
 			}
 		}
-		if (token || user) {
-			store.dispatch(setCredentials({ user, token }));
+		// Only pass valid user objects to Redux; ignore malformed values
+		if (token || (user && typeof user === 'object')) {
+			store.dispatch(setCredentials({ user: (user && typeof user === 'object') ? user : null, token }));
 		}
 	} catch (e) {
 		console.warn('Failed to restore auth from storage', e);

@@ -13,9 +13,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useLoginMutation } from '../../redux/api/apiSlice';
+import { useLoginMutation, useLazyGetEmployerMeQuery } from '../../redux/api/apiSlice';
 import { useDispatch } from 'react-redux';
 import { setCredentials } from '../../redux/slices/authSlice';
+import { getDisplayName } from '../../utils/userUtils';
 
 const PREVIEW_IMAGE = "file:///mnt/data/Log in.jpg"; // your uploaded screenshot
 
@@ -26,6 +27,7 @@ export default function LoginScreen({ navigation, route }) {
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
   const [login] = useLoginMutation();
+  const [getEmployerMe] = useLazyGetEmployerMeQuery();
 
   // Prefill email if coming from Signup
   React.useEffect(() => {
@@ -49,24 +51,49 @@ export default function LoginScreen({ navigation, route }) {
       setLoading(false);
 
       const { token, user } = res;
-      // persist token and user
+      // persist token
       if (token) await AsyncStorage.setItem('token', token);
-      if (user) await AsyncStorage.setItem('user', JSON.stringify(user));
 
+      // Ensure displayName is set and normalize user for UI without mutating backend user object
+      let normalizedUser = user;
+      if (user && typeof user === 'object') {
+        normalizedUser = { ...user, displayName: user.displayName || getDisplayName(user) };
+      }
+      // persist token and normalized user
+      if (normalizedUser) await AsyncStorage.setItem('user', JSON.stringify(normalizedUser));
       // update redux auth state
-      dispatch(setCredentials({ user, token }));
+      dispatch(setCredentials({ user: normalizedUser, token }));
 
-      if (user?.role === 'employee') {
+      const role = normalizedUser?.role || user?.role;
+
+      if (role === 'employee') {
         navigation.replace('JobPreferences');
-      } else if (user?.role === 'employer') {
-        navigation.replace('EmployerSetup');
+      } else if (role === 'employer') {
+        try {
+          const employerResult = await getEmployerMe();
+            const emp = employerResult?.data;
+          
+          // If there's error (eg. 404), navigate to create profile
+          if (employerResult?.error) {
+            navigation.replace('CreateEmployerProfile');
+          } else if (emp) {
+            navigation.replace('EmployerDashboard');
+          } else {
+            navigation.replace('CreateEmployerProfile');
+          }
+        } catch (err) {
+          // Any unexpected error, send user to create profile
+          navigation.replace('CreateEmployerProfile');
+        }
       } else {
+        
         navigation.replace('Home');
       }
     } catch (err) {
       setLoading(false);
-      console.log('login error', err);
+      
       const message = err?.data?.message || err?.message || 'Login failed';
+      console.log(message);
       Alert.alert('Error', message);
     }
   };
@@ -146,7 +173,21 @@ export default function LoginScreen({ navigation, route }) {
             </View>
 
             {/* Register Link */}
-            <TouchableOpacity onPress={() => navigation.navigate("Signup")}>
+            <TouchableOpacity onPress={async () => {
+              try {
+                const stored = await AsyncStorage.getItem('selectedRole');
+                if (stored) {
+                  // Already selected role previously; take user to Signup directly
+                  navigation.navigate('Signup');
+                } else {
+                  // Otherwise show the role selection screen first
+                  navigation.navigate('SelectRole');
+                }
+              } catch (e) {
+                // Fallback: navigate to role selection
+                navigation.navigate('SelectRole');
+              }
+            }}>
               <Text style={styles.registerText}>
                 Haven’t an account? <Text style={{ color: "#2F5DA8", fontWeight: "700" }}>Register</Text>
               </Text>

@@ -15,7 +15,7 @@ const JobPreferencesScreen = ({ navigation }) => {
 
   // Options
   const { data: rolesData, isLoading: rolesLoading, isError: rolesError } = useGetCategoryRolesQuery();
-  console.log("Fetched roles data:", rolesData);
+  
 
   const fallbackRoles = [
     "Product Designer",
@@ -39,7 +39,7 @@ const JobPreferencesScreen = ({ navigation }) => {
   const officeTypes = ["Any", "On-Site", "Remote"];
 
   const toggleRole = (roleId) => {
-    console.log("Toggling role:", roleId);
+    
     if (selectedRoles.includes(roleId)) {
       setSelectedRoles((s) => s.filter((item) => item !== roleId));
     } else {
@@ -54,11 +54,11 @@ const JobPreferencesScreen = ({ navigation }) => {
       jobType,
       officeType,
     }; 
-    console.log("Saving Preferences:", data); 
+    
 
     try {
       const response = await updateJobPreferences(data).unwrap();
-      console.log("Saved Preferences (API):", response);
+      
       navigation.replace("Categories");
     } catch (error) {
       console.error("Failed to update preferences:", error);

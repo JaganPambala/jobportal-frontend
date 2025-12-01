@@ -7,17 +7,19 @@ import {
   StyleSheet,
 } from "react-native";
 import { Entypo } from "@expo/vector-icons";
-import { useSelector, useDispatch } from "react-redux";
+import { useDispatch } from "react-redux";
+import useAuth from '../hooks/useAuth';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { logout as logoutAction } from "../redux/slices/authSlice";
+import { getDisplayName } from '../utils/userUtils';
 import { api as reduxApi } from "../redux/api/apiSlice";
 // import styles from "./profileMenuStyles"; // <- Styling separated
 
 export default function ProfileMenu({ navigation, useIconTrigger = false }) {
   const [open, setOpen] = useState(false);
   const dispatch = useDispatch();
-  const auth = useSelector((s) => s.auth);
-  const user = auth?.user;
+  // Prefer centralized hook so we always fetch user safely
+  const { auth, user, displayName } = useAuth();
 
   const handleLogout = async () => {
     await AsyncStorage.removeItem("token");
@@ -71,12 +73,18 @@ export default function ProfileMenu({ navigation, useIconTrigger = false }) {
               />
               <View style={{ marginLeft: 12 }}>
                 <Text style={styles.userName}>
-                  {user?.fullName || user?.name || "Guest"}
+                  {displayName}
                 </Text>
                 <TouchableOpacity
                   onPress={() => {
                     setOpen(false);
-                    navigation.navigate("Profile");
+                    const role = auth?.role || user?.role;
+                    if (role === 'employer') {
+                      // Employer profile screen is not implemented yet; open EmployerDashboard for now
+                      navigation.navigate('EmployerDashboard');
+                    } else {
+                      navigation.navigate('EmployeeProfile');
+                    }
                   }}
                 >
                   <Text style={styles.viewProfile}>View Profile</Text>
@@ -88,7 +96,7 @@ export default function ProfileMenu({ navigation, useIconTrigger = false }) {
             <View style={{ marginTop: 16 }}>
               {[
                 ["Personal Info", "PersonalInfo"],
-                ["Applications", "Applications"],
+                ["Applications", "EmployeeAplications"],
                 ["Proposals", "Proposals"],
                 ["Resumes", "Resumes"],
                 ["Portfolio", "Portfolio"],
@@ -113,7 +121,7 @@ export default function ProfileMenu({ navigation, useIconTrigger = false }) {
                   style={[styles.menuItem, { marginTop: 8 }]}
                   onPress={handleLogout}
                 >
-                  <Text style={[styles.menuText, { color: "#E23B3B" }]}>
+                  <Text style={[styles.menuText, { color: "#615959ff" }]}>
                     Logout
                   </Text>
                 </TouchableOpacity>

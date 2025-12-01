@@ -18,7 +18,7 @@ import { useRegisterMutation } from '../../redux/api/apiSlice';
 
 const PREVIEW_IMAGE = "file:///mnt/data/Register.jpg"; // your uploaded preview image
 
-export default function SignupScreen({ navigation }) {
+export default function SignupScreen({ navigation, route }) {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,10 +32,19 @@ export default function SignupScreen({ navigation }) {
     // read pre-selected role from SelectRole screen saved in AsyncStorage
     const loadRole = async () => {
       try {
+        // Prefer route param, then AsyncStorage
+        const paramRole = route?.params?.role;
+        if (paramRole) {
+          setRole(paramRole);
+          // persist for other flows
+          try { await AsyncStorage.setItem('selectedRole', paramRole); } catch (_) {}
+          return;
+        }
+
         const r = await AsyncStorage.getItem("selectedRole");
         if (r) setRole(r);
       } catch (err) {
-        console.warn("Failed to read selectedRole", err);
+        
       }
     };
     loadRole();
@@ -64,17 +73,19 @@ export default function SignupScreen({ navigation }) {
 
     try {
       const payload = { fullName, email, password, role: role || 'employee' }; 
-      console.log("Register payload", payload);
+      
       const res = await register(payload).unwrap();
       setLoading(false);
 
       // Registration succeeded. Do not auto-login here — send user to Login.
       Alert.alert('Success', 'Registration successful. Please log in.');
       const registeredEmail = res?.user?.email || email;
+      // clear selectedRole after successful registration
+      try { await AsyncStorage.removeItem('selectedRole'); } catch (_) {}
       navigation.replace('Login', { email: registeredEmail });
     } catch (err) {
       setLoading(false);
-      console.error('Register error', err);
+      
       const message = err?.data?.message || err?.message || 'Registration failed';
       Alert.alert('Error', message);
     }
@@ -149,10 +160,13 @@ export default function SignupScreen({ navigation }) {
             </View>
 
             {/* Role note */}
-            <View style={{ marginTop: 8, marginBottom: 12 }}>
+            <View style={{ marginTop: 8, marginBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Text style={{ color: "#666" }}>
                 Role: <Text style={{ fontWeight: "700" }}>{role || "Not selected"}</Text>
               </Text>
+              <TouchableOpacity onPress={() => navigation.replace('SelectRole')}>
+                <Text style={{ color: '#2F5DA8', fontWeight: '700' }}>Change</Text>
+              </TouchableOpacity>
             </View>
 
             <TouchableOpacity style={styles.registerBtn} onPress={handleRegister} disabled={loading}>

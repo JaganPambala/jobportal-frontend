@@ -90,7 +90,7 @@ const Onboarding = ({ navigation }) => {
 
   const handleSkip = () => {
     if (navigation?.replace) navigation.replace("SelectRole");
-    else console.log("Skip pressed");
+    
   };
 
   const renderItem = ({ item }) => {

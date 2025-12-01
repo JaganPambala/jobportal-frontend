@@ -13,7 +13,9 @@ function SelectRoleScreen({ navigation }) {
     // Save role temporarily for Signup
     await AsyncStorage.setItem("selectedRole", selectedRole);
 
-    navigation.navigate("Signup"); // pass to signup
+    // Replace the role selection screen with Signup to avoid stacking repeated screens
+    navigation.replace("Signup", { role: selectedRole });
+    
   };
 
   const roleOptions =

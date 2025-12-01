@@ -12,6 +12,7 @@ import {
   ScrollView,
 } from "react-native";
 import { Ionicons, Entypo } from "@expo/vector-icons";
+import useAuth from '../../hooks/useAuth';
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useGetFeaturedJobsQuery, useGetPopularJobsQuery } from '../../redux/api/apiSlice';
@@ -62,12 +63,12 @@ const fallbackPopularJobs = [
   },
 ];
 
-function FeaturedCard({ item }) {
+function FeaturedCard({ item, navigation, user }) {
   const tags = Array.isArray(item.tags) && item.tags.length > 0 ? item.tags : [item.jobType || ''];
   return (
     <View style={[styles.featuredCard, { backgroundColor: item.color }]}>
       <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <Image source={{ uri: item.logo }} style={styles.featuredLogo} onError={() => console.log('Logo load error')} />
+        <Image source={{ uri: item.logo }} style={styles.featuredLogo} />
          
         <View style={{ marginLeft: 12, flex: 1 }}>
           <Text style={styles.featuredTitle} numberOfLines={1}>{item.title}</Text>
@@ -82,6 +83,16 @@ function FeaturedCard({ item }) {
           </View>
         </View>
       </View>
+      {user && user.role === 'employee' && !user.fullName && (
+        <TouchableOpacity onPress={() => navigation.navigate('EditPersonalInfo')} style={{ marginBottom: 12 }}>
+          <Text style={{ color: '#2E5AAC', fontWeight: '700' }}>Complete your profile</Text>
+        </TouchableOpacity>
+      )}
+      {user && user.role === 'employer' && !user.companyName && (
+        <TouchableOpacity onPress={() => navigation.navigate('CreateEmployerProfile')} style={{ marginBottom: 12 }}>
+          <Text style={{ color: '#2E5AAC', fontWeight: '700' }}>Complete company profile</Text>
+        </TouchableOpacity>
+      )}
 
       <View style={styles.featuredFooter}>
         <Text style={styles.featuredSalary} numberOfLines={1}>{item.salary}</Text>
@@ -94,7 +105,7 @@ function FeaturedCard({ item }) {
 function PopularCard({ item }) {
   return (
     <View style={styles.popCard}>
-      <Image source={{ uri: item.logo }} style={styles.popLogo} onError={() => console.log('Logo load error')} />
+      <Image source={{ uri: item.logo }} style={styles.popLogo} />
       <Text style={styles.popTitle} numberOfLines={2}>{item.title}</Text>
       <Text style={styles.popCompany} numberOfLines={1}>{item.company}</Text>
       <Text style={styles.popSalary} numberOfLines={1}>{item.salary}</Text>
@@ -104,6 +115,7 @@ function PopularCard({ item }) {
 function HomeScreen({ navigation }) {
   const [query, setQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState(false);
+  const { user, firstName } = useAuth();
   const carouselRef = useRef(null);
 
   // RTK Query hooks for featured and popular jobs
@@ -140,7 +152,7 @@ function HomeScreen({ navigation }) {
         <View style={styles.headerRow}>
           <View>
             <Text style={styles.welcomeSmall}>Welcome Back!</Text>
-            <Text style={styles.welcomeName}>Rifat Sarkar 👋</Text>
+            <Text style={styles.welcomeName}>{firstName} 👋</Text>
           </View>
 
       
@@ -148,7 +160,7 @@ function HomeScreen({ navigation }) {
 
         {/* Search */}
         <View style={styles.searchRow}>
-          <View style={styles.searchBox}>
+          <TouchableOpacity activeOpacity={0.9} onPress={() => navigation.navigate('Search', { q: query })} style={styles.searchBox}>
             <Ionicons name="search-outline" size={20} color="#9AA0A6" />
             <TextInput
               placeholder="Search a job or position"
@@ -156,8 +168,10 @@ function HomeScreen({ navigation }) {
               style={styles.input}
               value={query}
               onChangeText={setQuery}
+              onSubmitEditing={() => navigation.navigate('Search', { q: query })}
+              onFocus={() => navigation.navigate('Search', { q: query })}
             />
-          </View>
+          </TouchableOpacity>
 
           <ProfileMenu navigation={navigation} useIconTrigger />
         </View>
@@ -184,7 +198,7 @@ function HomeScreen({ navigation }) {
             activeOpacity={0.8}
             > 
             <View style={{ width: width - 60, marginRight: 16 }}>
-      <FeaturedCard item={item} />
+          <FeaturedCard item={item} navigation={navigation} user={user} />
     </View>
             </TouchableOpacity>
           )}

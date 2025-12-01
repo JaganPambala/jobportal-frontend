@@ -7,16 +7,30 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useGetJobByIdQuery } from "../../redux/api/apiSlice";
+import { useGetJobByIdQuery, useApplyJobMutation } from "../../redux/api/apiSlice";
 
 const JobDetailsScreen = ({ route, navigation }) => {
   const { jobId } = route.params;
 
   const { data: job, isLoading, isError, error, refetch } = useGetJobByIdQuery(jobId);
+  const [applyJob, { isLoading: isApplying }] = useApplyJobMutation();
 
   const [activeTab, setActiveTab] = useState("Requirement");
+
+  const handleApplyJob = async () => {
+    try {
+      await applyJob(jobId).unwrap();
+      // Navigate to success screen and pass the job title
+      navigation.navigate("ApplySuccess", { roleName: job?.title || "Job" });
+    } catch (err) {
+      
+      const message = err?.data?.message || err?.message || 'Failed to apply for the job';
+      Alert.alert('Error', message);
+    }
+  };
 
   if (isLoading)
     return (
@@ -113,8 +127,16 @@ const JobDetailsScreen = ({ route, navigation }) => {
       </View>
 
       {/* ------------------ APPLY BUTTON ------------------ */}
-      <TouchableOpacity style={styles.applyBtn}>
-        <Text style={styles.applyBtnText}>Apply Now</Text>
+      <TouchableOpacity
+        style={[styles.applyBtn, isApplying && { opacity: 0.7 }]}
+        onPress={handleApplyJob}
+        disabled={isApplying}
+      >
+        {isApplying ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.applyBtnText}>Apply Now</Text>
+        )}
       </TouchableOpacity>
     </ScrollView>
   );

@@ -11,6 +11,17 @@ import JobPreferencesScreen from "./src/screens/preferences/JobPreferencesScreen
 import CategoriesScreen from "./src/screens/Categories/CategoriesScreen.js";
 import  HomeScreen from "./src/screens/Home/home.js";
 import JobDetailsScreen from "./src/screens/JobDetails/JobDetails.js";
+import EmployerDashboard from "./src/screens/employerDashboard/employerDashboard.js";
+import CreateEmployerProfile from "./src/screens/employerDashboard/CreateProfile.js";
+import PostJobScreen from "./src/screens/employerDashboard/PostJobScreen.js";
+import ManageJobsScreen from "./src/screens/employerDashboard/EmployeeManage.js";
+import ApplicantsListScreen from "./src/screens/employerDashboard/ApplicantsScreen.js";
+import EmployeeProfileScreen from "./src/screens/Employee/profile.js";
+import UploadResumeScreen from "./src/screens/Employee/UploadResume.js";
+import EditPersonalInfo from "./src/screens/Employee/EditPersonalInfo.js";
+import ApplySuccessScreen from "./src/screens/Apply/succeses.js";
+import EmployeeAplications from "./src/screens/Apply/EmployeeAplications.js";
+import SearchScreen from "./src/screens/Search/SearchScreen.js";
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -26,6 +37,18 @@ export default function App() {
         <Stack.Screen name="Categories" component={CategoriesScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="JobDetails" component={JobDetailsScreen} />
+
+        <Stack.Screen name="EmployerDashboard" component={EmployerDashboard} />
+        <Stack.Screen name="CreateEmployerProfile" component={CreateEmployerProfile} />
+        <Stack.Screen name="PostJob" component={PostJobScreen} />
+        <Stack.Screen name="ManageJobs" component={ManageJobsScreen} />
+        <Stack.Screen name="ApplicantsList" component={ApplicantsListScreen} />
+        <Stack.Screen name="EmployeeProfile" component={EmployeeProfileScreen} />
+        <Stack.Screen name="UploadResume" component={UploadResumeScreen} />
+        <Stack.Screen name="EditPersonalInfo" component={EditPersonalInfo} />
+      <Stack.Screen name="ApplySuccess" component={ApplySuccessScreen} />
+      <Stack.Screen name="EmployeeAplications" component={EmployeeAplications} />
+        <Stack.Screen name="Search" component={SearchScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
