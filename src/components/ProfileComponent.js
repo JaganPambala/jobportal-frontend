@@ -139,10 +139,7 @@ export default function ProfileMenu({ navigation, useIconTrigger = false }) {
                 ["Applications", "EmployeeAplications"],
                 ["Saved Jobs", "Saved"],
                 ["Proposals", "Proposals"],
-                ["Resumes", "Resumes"],
-                ["Portfolio", "Portfolio"],
-                ["Cover Letters", "CoverLetters"],
-                ["Settings", "Settings"],
+                
               ].map(([label, screen]) => (
                 <TouchableOpacity
                   key={screen}
