@@ -61,7 +61,7 @@ export default function PostJobScreen({ navigation }) {
       const res = await postJob(payload).unwrap();
       
       Alert.alert('Success', 'Job posted successfully');
-      navigation.navigate('EmployerDashboard');
+      navigation.navigate('Employer', { screen: 'EmployerDashboard' });
     } catch (err) {
       
       Alert.alert('Error', err?.data?.message || err?.message || 'Failed to post job');

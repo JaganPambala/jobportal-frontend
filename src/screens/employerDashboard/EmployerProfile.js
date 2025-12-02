@@ -138,11 +138,24 @@ export default function EmployerProfileScreen({ navigation }) {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity 
-          onPress={() => navigation.goBack()}
+          onPress={() => {
+            try {
+              console.log('EmployerProfile: Back pressed, canGoBack=', navigation.canGoBack && navigation.canGoBack());
+              if (navigation.canGoBack && navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                // If there is no back history (replace was used to land here), go to Employer stack root.
+                navigation.navigate('Employer', { screen: 'EmployerDashboard' });
+              }
+            } catch (e) {
+              // fallback: navigate to EmployerDashboard
+              navigation.navigate('Employer', { screen: 'EmployerDashboard' });
+            }
+          }}
           hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
           style={styles.backButton}
         >
@@ -152,7 +165,13 @@ export default function EmployerProfileScreen({ navigation }) {
         <Text style={styles.headerTitle}>Company Profile</Text>
         
         <TouchableOpacity 
-          onPress={() => setEditMode(true)}
+          onPress={() => {
+            // show edit modal
+            if (typeof setEditMode === 'function') {
+              console.log('EmployerProfile: Edit button pressed (setEditMode)');
+              setEditMode(true);
+            }
+          }}
           hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
           style={styles.editButton}
           accessibilityRole="button"

@@ -26,6 +26,7 @@ export default function SignupScreen({ navigation, route }) {
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState(null); // employee | employer
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
   const [register] = useRegisterMutation();
 
   useEffect(() => {
@@ -51,20 +52,60 @@ export default function SignupScreen({ navigation, route }) {
   }, []);
 
   const validate = () => {
-    if (!fullName.trim() || !email.trim() || !password.trim() || !confirm.trim()) {
-      Alert.alert("Validation", "Please fill all fields.");
-      return false;
+    const newErrors = {};
+    if (!fullName.trim()) {
+      newErrors.fullName = 'Full name is required';
+    } else if (fullName.trim().length < 3) {
+      newErrors.fullName = 'Full name must be at least 3 characters';
     }
-    if (password !== confirm) {
-      Alert.alert("Validation", "Passwords do not match.");
-      return false;
+    if (!email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
+      newErrors.email = 'Please enter a valid email';
     }
-    // basic email check
-    if (!/^\S+@\S+\.\S+$/.test(email)) {
-      Alert.alert("Validation", "Please enter a valid email.");
+    if (!password.trim()) {
+      newErrors.password = 'Password is required';
+    } else if (password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+    if (!confirm.trim()) {
+      newErrors.confirm = 'Confirm password is required';
+    } else if (password !== confirm) {
+      newErrors.confirm = 'Passwords do not match';
+    }
+
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      const firstField = Object.keys(newErrors)[0];
+      Alert.alert('Validation', newErrors[firstField]);
       return false;
     }
     return true;
+  };
+
+  const validateField = (field) => {
+    const newErrors = { ...errors };
+    if (field === 'fullName') {
+      if (!fullName.trim()) newErrors.fullName = 'Full name is required';
+      else if (fullName.trim().length < 3) newErrors.fullName = 'Full name must be at least 3 characters';
+      else newErrors.fullName = null;
+    }
+    if (field === 'email') {
+      if (!email.trim()) newErrors.email = 'Email is required';
+      else if (!/^\S+@\S+\.\S+$/.test(email.trim())) newErrors.email = 'Please enter a valid email';
+      else newErrors.email = null;
+    }
+    if (field === 'password') {
+      if (!password.trim()) newErrors.password = 'Password is required';
+      else if (password.length < 6) newErrors.password = 'Password must be at least 6 characters';
+      else newErrors.password = null;
+    }
+    if (field === 'confirm') {
+      if (!confirm.trim()) newErrors.confirm = 'Confirm password is required';
+      else if (password !== confirm) newErrors.confirm = 'Passwords do not match';
+      else newErrors.confirm = null;
+    }
+    setErrors(newErrors);
   };
 
   const handleRegister = async () => {
@@ -91,6 +132,8 @@ export default function SignupScreen({ navigation, route }) {
     }
   };
 
+  const isFormValid = fullName.trim().length >= 3 && /^\S+@\S+\.\S+$/.test(email.trim()) && password.length >= 6 && confirm === password;
+
   return (
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView
@@ -113,32 +156,38 @@ export default function SignupScreen({ navigation, route }) {
               <TextInput
                 placeholder="Full Name"
                 value={fullName}
-                onChangeText={setFullName}
+                onChangeText={(t) => { setFullName(t); if (errors.fullName) setErrors((s) => ({ ...s, fullName: null })); }}
+                onBlur={() => validateField('fullName')}
                 style={styles.input}
                 autoCapitalize="words"
               />
+              {errors.fullName && <Text style={styles.errorText}>{errors.fullName}</Text>}
             </View>
 
             <View style={styles.inputCard}>
               <TextInput
                 placeholder="E-mail"
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(t) => { setEmail(t); if (errors.email) setErrors((s) => ({ ...s, email: null })); }}
+                onBlur={() => validateField('email')}
                 style={styles.input}
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
+              {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
             </View>
 
             <View style={styles.inputCard}>
               <TextInput
                 placeholder="Password"
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(t) => { setPassword(t); if (errors.password) setErrors((s) => ({ ...s, password: null })); }}
+                onBlur={() => validateField('password')}
                 style={styles.input}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
               />
+              {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
               <TouchableOpacity
                 onPress={() => setShowPassword((s) => !s)}
                 style={styles.eyeBtn}
@@ -152,11 +201,13 @@ export default function SignupScreen({ navigation, route }) {
               <TextInput
                 placeholder="Confirm Password"
                 value={confirm}
-                onChangeText={setConfirm}
+                onChangeText={(t) => { setConfirm(t); if (errors.confirm) setErrors((s) => ({ ...s, confirm: null })); }}
+                onBlur={() => validateField('confirm')}
                 style={styles.input}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
               />
+              {errors.confirm && <Text style={styles.errorText}>{errors.confirm}</Text>}
             </View>
 
             {/* Role note */}
@@ -169,7 +220,7 @@ export default function SignupScreen({ navigation, route }) {
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity style={styles.registerBtn} onPress={handleRegister} disabled={loading}>
+            <TouchableOpacity style={[styles.registerBtn, (!isFormValid || loading) && { opacity: 0.6 }]} onPress={handleRegister} disabled={!isFormValid || loading}>
               <Text style={styles.registerText}>{loading ? "Registering..." : "Register"}</Text>
             </TouchableOpacity>
 
@@ -247,4 +298,5 @@ const styles = StyleSheet.create({
     borderColor: "#ECEAF0",
   },
   loginText: { textAlign: "center", color: "#9EA6B2", marginTop: 16 },
+  errorText: { color: '#ff3b30', marginTop: 6 },
 });

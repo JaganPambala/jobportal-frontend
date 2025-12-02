@@ -70,7 +70,7 @@ const JobPreferencesScreen = ({ navigation }) => {
     <ScrollView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.replace("Home") }>
+        <TouchableOpacity onPress={() => navigation.replace("Employee") }>
           <Ionicons name="chevron-back" size={28} color="#000" />
         </TouchableOpacity>
 

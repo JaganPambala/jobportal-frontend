@@ -9,9 +9,10 @@ import {
 import { Entypo } from "@expo/vector-icons";
 import { useDispatch } from "react-redux";
 import useAuth from '../hooks/useAuth';
+import { getInitials } from '../utils/userUtils';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { logout as logoutAction } from "../redux/slices/authSlice";
-import { getDisplayName } from '../utils/userUtils';
+// getDisplayName removed (not used). Kept getInitials which is used to render initials.
 import { api as reduxApi } from "../redux/api/apiSlice";
 // import styles from "./profileMenuStyles"; // <- Styling separated
 
@@ -21,6 +22,18 @@ export default function ProfileMenu({ navigation, useIconTrigger = false }) {
   // Prefer centralized hook so we always fetch user safely
   const { auth, user, displayName } = useAuth();
 
+  // Deterministic color from a name so each user has a consistent fallback color
+  const getColorFromName = (name) => {
+    const palette = ['#2E5AAC', '#4A88F2', '#6DBBFF', '#FF6B6B', '#4ECDC4', '#8E44AD', '#F39C12'];
+    if (!name) return palette[0];
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % palette.length;
+    return palette[index];
+  };
+
   const handleLogout = async () => {
     await AsyncStorage.removeItem("token");
     await AsyncStorage.removeItem("user");
@@ -29,6 +42,12 @@ export default function ProfileMenu({ navigation, useIconTrigger = false }) {
     dispatch(reduxApi.util.resetApiState());
 
     setOpen(false);
+    // Ensure we always return to the Auth flow (safe reset) on logout
+    try {
+      navigation.replace('Auth');
+    } catch (e) {
+      // ignore: if navigation isn't available, fallback to root handler
+    }
     
     // Redux state change will automatically trigger root navigator to show AuthStack
     // No need to navigate explicitly; the root will re-evaluate based on auth state
@@ -48,11 +67,16 @@ export default function ProfileMenu({ navigation, useIconTrigger = false }) {
         <TouchableOpacity
           onPress={() => setOpen((v) => !v)}
           style={styles.avatarWrap}
+          accessibilityRole="button"
+          accessibilityLabel={displayName ? `${displayName} profile` : 'Profile menu'}
         >
-          <Image
-            source={{ uri: user?.avatar || "file:///mnt/data/Start.jpg" }}
-            style={styles.avatar}
-          />
+          {user?.avatar ? (
+            <Image source={{ uri: user?.avatar }} style={styles.avatar} />
+          ) : (
+            <View style={[styles.avatarFallback, { backgroundColor: getColorFromName(displayName) }]}>
+              <Text style={styles.avatarInitial}>{getInitials(user)}</Text>
+            </View>
+          )}
           <View style={styles.statusDot} />
         </TouchableOpacity>
       )}
@@ -69,10 +93,13 @@ export default function ProfileMenu({ navigation, useIconTrigger = false }) {
             <View style={styles.dropdownCard}>
             {/* Top Profile Section */}
             <View style={styles.headerRow}>
-              <Image
-                source={{ uri: user?.avatar || "file:///mnt/data/Start.jpg" }}
-                style={styles.menuAvatar}
-              />
+                {user?.avatar ? (
+                  <Image source={{ uri: user?.avatar }} style={styles.menuAvatar} />
+                ) : (
+                  <View style={[styles.menuAvatar, { backgroundColor: getColorFromName(displayName), alignItems: 'center', justifyContent: 'center' }]}>
+                    <Text style={[styles.avatarInitial, { fontSize: 20 }]}>{getInitials(user)}</Text>
+                  </View>
+                )}
               <View style={{ marginLeft: 12 }}>
                 <Text style={styles.userName}>
                   {displayName}
@@ -80,10 +107,21 @@ export default function ProfileMenu({ navigation, useIconTrigger = false }) {
                 <TouchableOpacity
                   onPress={() => {
                     setOpen(false);
-                    const role = auth?.role || user?.role;
+                    // Normalize role comparison to avoid case differences from backend
+                    const rawRole = auth?.role || user?.role || '';
+                    const role = typeof rawRole === 'string' ? rawRole.toLowerCase() : '';
+                    if (__DEV__) console.log('ProfileMenu: Open profile for role=', role);
+
+                    // Prefer EmployerProfile (full profile screen) if available, fallback to EmployerDashboard
                     if (role === 'employer') {
-                      // Employer profile screen is not implemented yet; open EmployerDashboard for now
-                      navigation.navigate('EmployerDashboard');
+                      // Try navigating to EmployerProfile first (preferred)
+                      try {
+                        // Use replace so the previous employee stack doesn't remain in history
+                        navigation.replace('EmployerProfile');
+                      } catch (e) {
+                        // Fallback to EmployerDashboard if EmployerProfile isn't registered in the current navigator
+                        navigation.replace('Employer');
+                      }
                     } else {
                       navigation.navigate('EmployeeProfile');
                     }
@@ -99,6 +137,7 @@ export default function ProfileMenu({ navigation, useIconTrigger = false }) {
               {[
                 ["Personal Info", "PersonalInfo"],
                 ["Applications", "EmployeeAplications"],
+                ["Saved Jobs", "Saved"],
                 ["Proposals", "Proposals"],
                 ["Resumes", "Resumes"],
                 ["Portfolio", "Portfolio"],
@@ -170,6 +209,20 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     borderRadius: 24,
+  },
+
+  avatarFallback: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  avatarInitial: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 18,
   },
 
   statusDot: {

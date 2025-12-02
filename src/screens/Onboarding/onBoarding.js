@@ -19,7 +19,7 @@ const { width, height } = Dimensions.get("window");
 const slides = [
   {
     id: "1",
-    image: { uri: "file:///mnt/data/Set A1.jpg" },
+    image: { uri: "https://res.cloudinary.com/dgkcumi4q/image/upload/v1764669951/Job_hunt-amico_1_mos3px.png" },
     title: "Search your job",
     subtitle:
       "Figure out your top five priorities whether it is company culture, salary.",

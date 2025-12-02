@@ -1,5 +1,5 @@
 // HomeScreen.jsx
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,9 +9,10 @@ import {
   Image,
   FlatList,
   Dimensions,
-  ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons, Entypo } from "@expo/vector-icons";
+import { useIsFocused } from '@react-navigation/native';
 import useAuth from '../../hooks/useAuth';
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -97,7 +98,7 @@ function FeaturedCard({ item, navigation, user }) {
         </TouchableOpacity>
       )}
       {user && user.role === 'employer' && !user.companyName && (
-        <TouchableOpacity onPress={() => navigation.navigate('CreateEmployerProfile')} style={{ marginBottom: 12 }}>
+        <TouchableOpacity onPress={() => navigation.navigate('Employer', { screen: 'CreateEmployerProfile' })} style={{ marginBottom: 12 }}>
           <Text style={{ color: '#2E5AAC', fontWeight: '700' }}>Complete company profile</Text>
         </TouchableOpacity>
       )}
@@ -124,6 +125,20 @@ function HomeScreen({ navigation }) {
   const [query, setQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState(false);
   const { user, firstName } = useAuth();
+  React.useEffect(() => {
+    // Redirect only when the user's role changes and we're not already on the Employer stack
+    const role = (user?.role || '').toLowerCase();
+    if (role === 'employer') {
+      try {
+        const current = navigation.getCurrentRoute && navigation.getCurrentRoute();
+        if (!current || current.name !== 'Employer') {
+          navigation.replace('Employer');
+        }
+      } catch (e) {
+        navigation.replace('Employer');
+      }
+    }
+  }, [user?.role]);
   const carouselRef = useRef(null);
 
   // RTK Query hooks for featured and popular jobs
@@ -153,115 +168,106 @@ function HomeScreen({ navigation }) {
   const featuredJobs = transformJobData(featuredResponse).length > 0 ? transformJobData(featuredResponse) : fallbackFeaturedJobs;
   const popularJobs = transformJobData(popularResponse).length > 0 ? transformJobData(popularResponse) : fallbackPopularJobs;
 
-  return (
-    <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.container}>
-        {/* Header: Greeting + avatar */}
-        <View style={styles.headerRow}>
-          <View>
-            <Text style={styles.welcomeSmall}>Welcome Back!</Text>
-            <Text style={styles.welcomeName}>{firstName} 👋</Text>
-          </View>
-
-      
+  const renderHeader = () => (
+    <>
+      {/* Header: Greeting + avatar */}
+      <View style={styles.headerRow}>
+        <View>
+          <Text style={styles.welcomeSmall}>Welcome Back!</Text>
+          <Text style={styles.welcomeName}>{firstName} 👋</Text>
         </View>
+        <ProfileMenu navigation={navigation} />
+      </View>
 
-        {/* Search */}
-        <View style={styles.searchRow}>
-          <TouchableOpacity activeOpacity={0.9} onPress={() => navigation.navigate('Search', { q: query })} style={styles.searchBox}>
-            <Ionicons name="search-outline" size={20} color="#9AA0A6" />
-            <TextInput
-              placeholder="Search a job or position"
-              placeholderTextColor="#9AA0A6"
-              style={styles.input}
-              value={query}
-              onChangeText={setQuery}
-              onSubmitEditing={() => navigation.navigate('Search', { q: query })}
-              onFocus={() => navigation.navigate('Search', { q: query })}
-            />
-          </TouchableOpacity>
-
-          <ProfileMenu navigation={navigation} useIconTrigger />
-        </View>
-
-        {/* Featured Jobs carousel */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Featured Jobs</Text>
-          <TouchableOpacity onPress={() => navigation.navigate("JobsList")}>
-            <Text style={styles.seeAll}>See all</Text>
-          </TouchableOpacity>
-        </View>
-
-        <FlatList
-          ref={carouselRef}
-          data={featuredJobs}
-          keyExtractor={(i) => i.id}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          pagingEnabled
-          snapToAlignment="center"
-          decelerationRate="fast"
-          renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => navigation.navigate("JobDetails", { jobId: item.id })} style={{ width: width - 40, marginRight: 16 }}
-            activeOpacity={0.8}
-            > 
-            <View style={{ width: width - 60, marginRight: 16 }}>
-          <FeaturedCard item={item} navigation={navigation} user={user} />
-    </View>
-            </TouchableOpacity>
-          )}
-          style={{ marginBottom: 12 }}
-        />
-
-        {/* Dots for carousel (simple) */}
-        <View style={styles.dotsRow}>
-          {featuredJobs.map((_, i) => (
-            <View key={i} style={[styles.dot, i === 0 && styles.dotActive]} />
-          ))}
-        </View>
-
-        {/* Popular Jobs */}
-        <View style={[styles.sectionHeader, { marginTop: 18 }]}>
-          <Text style={styles.sectionTitle}>Popular Jobs</Text>
-          <TouchableOpacity onPress={() => navigation.navigate("Categories")}>
-            <Text style={styles.seeAll}>See all</Text>
-          </TouchableOpacity>
-        </View>
-
-        <FlatList
-          data={popularJobs}
-          keyExtractor={(item) => item.id}
-          numColumns={2}
-          columnWrapperStyle={{ justifyContent: 'space-between', marginBottom: 12 }}
-          showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => navigation.navigate('JobDetails', { jobId: item.id })} activeOpacity={0.8}>
-              <PopularCard item={item} />
-            </TouchableOpacity>
-          )}
-          contentContainerStyle={{ paddingBottom: 40 }}
-        />
-      </ScrollView>
-
-      {/* Bottom Tab Bar (static) */}
-      <View style={styles.tabBar}>
-        <TouchableOpacity style={styles.tabItem}>
-          <Ionicons name="home" size={22} color="#2E5AAC" />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem}>
-          <Ionicons name="mail-outline" size={22} color="#9AA0A6" />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem}>
-          <Ionicons name="bookmark-outline" size={22} color="#9AA0A6" />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem}
-        onPress={() => navigation.navigate("Categories")}>
-          <Ionicons name="grid-outline" size={22} color="#9AA0A6" />
+      {/* Search */}
+      <View style={styles.searchRow}>
+        <TouchableOpacity activeOpacity={0.9} onPress={() => navigation.navigate('Search', { q: query })} style={styles.searchBox}>
+          <Ionicons name="search-outline" size={20} color="#9AA0A6" />
+          <TextInput
+            placeholder="Search a job or position"
+            placeholderTextColor="#9AA0A6"
+            style={styles.input}
+            value={query}
+            onChangeText={setQuery}
+            onSubmitEditing={() => navigation.navigate('Search', { q: query })}
+            onFocus={() => navigation.navigate('Search', { q: query })}
+          />
         </TouchableOpacity>
       </View>
+
+      {/* Featured Jobs */}
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Featured Jobs</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('JobsList')}>
+          <Text style={styles.seeAll}>See all</Text>
+        </TouchableOpacity>
+      </View>
+
+      <FlatList
+        ref={carouselRef}
+        data={featuredJobs}
+        keyExtractor={(i) => i.id}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        pagingEnabled
+        snapToAlignment="center"
+        decelerationRate="fast"
+        renderItem={({ item }) => (
+          <TouchableOpacity onPress={() => navigation.navigate('JobDetails', { jobId: item.id })} style={{ width: width - 40, marginRight: 16 }} activeOpacity={0.8}>
+            <View style={{ width: width - 60, marginRight: 16 }}>
+              <FeaturedCard item={item} navigation={navigation} user={user} />
+            </View>
+          </TouchableOpacity>
+        )}
+        style={{ marginBottom: 12 }}
+      />
+
+      {/* Dots for carousel (simple) */}
+      <View style={styles.dotsRow}>
+        {featuredJobs.map((_, i) => (
+          <View key={i} style={[styles.dot, i === 0 && styles.dotActive]} />
+        ))}
+      </View>
+
+      {/* Popular Jobs header */}
+      <View style={[styles.sectionHeader, { marginTop: 18 }]}>
+        <Text style={styles.sectionTitle}>Popular Jobs</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('Browse', { screen: 'BrowseRoot' })}>
+          <Text style={styles.seeAll}>See all</Text>
+        </TouchableOpacity>
+      </View>
+    </>
+  );
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <FlatList
+        data={popularJobs}
+        keyExtractor={(item) => item.id}
+        numColumns={2}
+        columnWrapperStyle={{ justifyContent: 'space-between', marginBottom: 12 }}
+        showsVerticalScrollIndicator={false}
+        renderItem={({ item }) => (
+          <TouchableOpacity onPress={() => navigation.navigate('JobDetails', { jobId: item.id })} activeOpacity={0.8}>
+            <PopularCard item={item} />
+          </TouchableOpacity>
+        )}
+        contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 20, paddingTop: 20 }}
+        ListHeaderComponent={renderHeader}
+        ListEmptyComponent={
+          featuredLoading || popularLoading ? (
+            <ActivityIndicator size="large" color="#2E5AAC" style={{ margin: 16 }} />
+          ) : (
+            <View style={{ alignItems: 'center', paddingTop: 40 }}>
+              <Ionicons name="search" size={48} color="#9AA0A6" />
+              <Text style={{ fontSize: 18, fontWeight: '700', marginTop: 12 }}>No results</Text>
+              <Text style={{ color: '#8D99A6', textAlign: 'center', maxWidth: 340 }}>No jobs found. Try different keywords or filters.</Text>
+            </View>
+          )
+        }
+      />
+
+      {/* Bottom Tab Bar is now part of the global MainTabs navigator */}
     </SafeAreaView>
   );
 }
@@ -353,22 +359,7 @@ const styles = StyleSheet.create({
   popCompany: { color: "#9AA0A6", marginBottom: 8 },
   popSalary: { fontWeight: "700", color: "#222" },
 
-  tabBar: {
-    position: "absolute",
-    bottom: 18,
-    left: 20,
-    right: 20,
-    height: 62,
-    borderRadius: 14,
-    backgroundColor: "#fff",
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    elevation: 6,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-  },
+  // tabBar styles are now handled by MainTabs navigator
   tabItem: { alignItems: "center", justifyContent: "center" },
 });
 

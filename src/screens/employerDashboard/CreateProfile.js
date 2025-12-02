@@ -50,7 +50,7 @@ export default function CreateEmployerProfile({ navigation }) {
     try {
       const res = await createEmployerProfile(payload).unwrap();
       
-      navigation.replace('EmployerDashboard');
+      navigation.replace('Employer');
     } catch (err) {
       
       Alert.alert('Error', err?.data?.message || err?.message || 'Failed to save profile');

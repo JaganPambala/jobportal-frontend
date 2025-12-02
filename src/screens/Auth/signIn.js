@@ -25,6 +25,7 @@ export default function LoginScreen({ navigation, route }) {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
   const dispatch = useDispatch();
   const [login] = useLoginMutation();
   const [getEmployerMe] = useLazyGetEmployerMeQuery();
@@ -36,11 +37,41 @@ export default function LoginScreen({ navigation, route }) {
   }, [route]);
 
   const validate = () => {
-    if (!email.trim() || !password.trim()) {
-      Alert.alert("Validation", "Please enter email and password.");
+    const newErrors = {};
+    if (!email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
+      newErrors.email = 'Please enter a valid email';
+    }
+    if (!password.trim()) {
+      newErrors.password = 'Password is required';
+    } else if (password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      // Show the first error as an alert for visibility
+      const firstField = Object.keys(newErrors)[0];
+      Alert.alert('Validation', newErrors[firstField]);
       return false;
     }
     return true;
+  };
+
+  const validateField = (field) => {
+    const newErrors = { ...errors };
+    if (field === 'email') {
+      if (!email.trim()) newErrors.email = 'Email is required';
+      else if (!/^\S+@\S+\.\S+$/.test(email.trim())) newErrors.email = 'Please enter a valid email';
+      else newErrors.email = null;
+    }
+    if (field === 'password') {
+      if (!password.trim()) newErrors.password = 'Password is required';
+      else if (password.length < 6) newErrors.password = 'Password must be at least 6 characters';
+      else newErrors.password = null;
+    }
+    setErrors(newErrors);
   };
 
   const handleLogin = async () => {
@@ -75,19 +106,19 @@ export default function LoginScreen({ navigation, route }) {
           
           // If there's error (eg. 404), navigate to create profile
           if (employerResult?.error) {
-            navigation.replace('CreateEmployerProfile');
+            navigation.replace('Employer', { screen: 'CreateEmployerProfile' });
           } else if (emp) {
-            navigation.replace('EmployerDashboard');
+            navigation.replace('Employer');
           } else {
-            navigation.replace('CreateEmployerProfile');
+            navigation.replace('Employer', { screen: 'CreateEmployerProfile' });
           }
         } catch (err) {
           // Any unexpected error, send user to create profile
-          navigation.replace('CreateEmployerProfile');
+            navigation.replace('Employer', { screen: 'CreateEmployerProfile' });
         }
       } else {
         
-        navigation.replace('Home');
+        navigation.replace('Employee');
       }
     } catch (err) {
       setLoading(false);
@@ -97,6 +128,8 @@ export default function LoginScreen({ navigation, route }) {
       Alert.alert('Error', message);
     }
   };
+
+  const isFormValid = email.trim() && password.length >= 6 && /^\S+@\S+\.\S+$/.test(email.trim());
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -126,11 +159,13 @@ export default function LoginScreen({ navigation, route }) {
               <TextInput
                 placeholder="E-mail"
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(t) => { setEmail(t); if (errors.email) setErrors((s) => ({ ...s, email: null })); }}
+                onBlur={() => validateField('email')}
                 autoCapitalize="none"
                 keyboardType="email-address"
                 style={styles.input}
               />
+              {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
             </View>
 
             {/* Password */}
@@ -138,11 +173,13 @@ export default function LoginScreen({ navigation, route }) {
               <TextInput
                 placeholder="Password"
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={(t) => { setPassword(t); if (errors.password) setErrors((s) => ({ ...s, password: null })); }}
+                onBlur={() => validateField('password')}
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 style={styles.input}
               />
+              {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
 
               <TouchableOpacity
                 onPress={() => setShowPassword((prev) => !prev)}
@@ -153,7 +190,7 @@ export default function LoginScreen({ navigation, route }) {
             </View>
 
             {/* Login Button */}
-            <TouchableOpacity style={styles.loginBtn} onPress={handleLogin} disabled={loading}>
+            <TouchableOpacity style={[styles.loginBtn, (!isFormValid || loading) && { opacity: 0.6 }]} onPress={handleLogin} disabled={!isFormValid || loading}>
               <Text style={styles.loginText}>{loading ? "Logging in..." : "Log in"}</Text>
             </TouchableOpacity>
 
@@ -275,4 +312,5 @@ const styles = StyleSheet.create({
     marginTop: 16,
     color: "#9EA6B2",
   },
+  errorText: { color: '#ff3b30', marginTop: 6 },
 });
