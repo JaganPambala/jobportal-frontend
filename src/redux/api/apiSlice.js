@@ -5,7 +5,8 @@ const baseUrl = "http://10.0.2.2:5000";
 
 export const api = createApi({
   reducerPath: 'reduxApi',
-  tagTypes: ['Job', 'Applicants', 'EmployeeMe', 'Applications', 'Saved'],
+  // Include all tag types used by endpoints to avoid runtime warnings
+  tagTypes: ['Job', 'Applicants', 'EmployeeMe', 'EmployerMe', 'Applications', 'Saved', 'Category'],
   baseQuery: fetchBaseQuery({
     baseUrl,
     prepareHeaders: (headers, { getState }) => {

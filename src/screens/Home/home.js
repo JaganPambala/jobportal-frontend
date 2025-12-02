@@ -9,7 +9,7 @@ import {
   Image,
   FlatList,
   Dimensions,
-  ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons, Entypo } from "@expo/vector-icons";
 import { useIsFocused } from '@react-navigation/native';
@@ -168,94 +168,104 @@ function HomeScreen({ navigation }) {
   const featuredJobs = transformJobData(featuredResponse).length > 0 ? transformJobData(featuredResponse) : fallbackFeaturedJobs;
   const popularJobs = transformJobData(popularResponse).length > 0 ? transformJobData(popularResponse) : fallbackPopularJobs;
 
+  const renderHeader = () => (
+    <>
+      {/* Header: Greeting + avatar */}
+      <View style={styles.headerRow}>
+        <View>
+          <Text style={styles.welcomeSmall}>Welcome Back!</Text>
+          <Text style={styles.welcomeName}>{firstName} 👋</Text>
+        </View>
+        <ProfileMenu navigation={navigation} />
+      </View>
+
+      {/* Search */}
+      <View style={styles.searchRow}>
+        <TouchableOpacity activeOpacity={0.9} onPress={() => navigation.navigate('Search', { q: query })} style={styles.searchBox}>
+          <Ionicons name="search-outline" size={20} color="#9AA0A6" />
+          <TextInput
+            placeholder="Search a job or position"
+            placeholderTextColor="#9AA0A6"
+            style={styles.input}
+            value={query}
+            onChangeText={setQuery}
+            onSubmitEditing={() => navigation.navigate('Search', { q: query })}
+            onFocus={() => navigation.navigate('Search', { q: query })}
+          />
+        </TouchableOpacity>
+      </View>
+
+      {/* Featured Jobs */}
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Featured Jobs</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('JobsList')}>
+          <Text style={styles.seeAll}>See all</Text>
+        </TouchableOpacity>
+      </View>
+
+      <FlatList
+        ref={carouselRef}
+        data={featuredJobs}
+        keyExtractor={(i) => i.id}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        pagingEnabled
+        snapToAlignment="center"
+        decelerationRate="fast"
+        renderItem={({ item }) => (
+          <TouchableOpacity onPress={() => navigation.navigate('JobDetails', { jobId: item.id })} style={{ width: width - 40, marginRight: 16 }} activeOpacity={0.8}>
+            <View style={{ width: width - 60, marginRight: 16 }}>
+              <FeaturedCard item={item} navigation={navigation} user={user} />
+            </View>
+          </TouchableOpacity>
+        )}
+        style={{ marginBottom: 12 }}
+      />
+
+      {/* Dots for carousel (simple) */}
+      <View style={styles.dotsRow}>
+        {featuredJobs.map((_, i) => (
+          <View key={i} style={[styles.dot, i === 0 && styles.dotActive]} />
+        ))}
+      </View>
+
+      {/* Popular Jobs header */}
+      <View style={[styles.sectionHeader, { marginTop: 18 }]}>
+        <Text style={styles.sectionTitle}>Popular Jobs</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('Browse', { screen: 'BrowseRoot' })}>
+          <Text style={styles.seeAll}>See all</Text>
+        </TouchableOpacity>
+      </View>
+    </>
+  );
+
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.container}>
-        {/* Header: Greeting + avatar */}
-        <View style={styles.headerRow}>
-          <View>
-            <Text style={styles.welcomeSmall}>Welcome Back!</Text>
-            <Text style={styles.welcomeName}>{firstName} 👋</Text>
-          </View>
-          <ProfileMenu navigation={navigation} />
-        </View>
-
-        {/* Search */}
-        <View style={styles.searchRow}>
-          <TouchableOpacity activeOpacity={0.9} onPress={() => navigation.navigate('Search', { q: query })} style={styles.searchBox}>
-            <Ionicons name="search-outline" size={20} color="#9AA0A6" />
-            <TextInput
-              placeholder="Search a job or position"
-              placeholderTextColor="#9AA0A6"
-              style={styles.input}
-              value={query}
-              onChangeText={setQuery}
-              onSubmitEditing={() => navigation.navigate('Search', { q: query })}
-              onFocus={() => navigation.navigate('Search', { q: query })}
-            />
+      <FlatList
+        data={popularJobs}
+        keyExtractor={(item) => item.id}
+        numColumns={2}
+        columnWrapperStyle={{ justifyContent: 'space-between', marginBottom: 12 }}
+        showsVerticalScrollIndicator={false}
+        renderItem={({ item }) => (
+          <TouchableOpacity onPress={() => navigation.navigate('JobDetails', { jobId: item.id })} activeOpacity={0.8}>
+            <PopularCard item={item} />
           </TouchableOpacity>
-
-          {/* Avatar/ menu in header now — removed duplicate from search row */}
-        </View>
-
-        {/* Featured Jobs carousel */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Featured Jobs</Text>
-          <TouchableOpacity onPress={() => navigation.navigate("JobsList")}>
-            <Text style={styles.seeAll}>See all</Text>
-          </TouchableOpacity>
-        </View>
-
-        <FlatList
-          ref={carouselRef}
-          data={featuredJobs}
-          keyExtractor={(i) => i.id}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          pagingEnabled
-          snapToAlignment="center"
-          decelerationRate="fast"
-          renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => navigation.navigate("JobDetails", { jobId: item.id })} style={{ width: width - 40, marginRight: 16 }}
-            activeOpacity={0.8}
-            > 
-            <View style={{ width: width - 60, marginRight: 16 }}>
-          <FeaturedCard item={item} navigation={navigation} user={user} />
-    </View>
-            </TouchableOpacity>
-          )}
-          style={{ marginBottom: 12 }}
-        />
-
-        {/* Dots for carousel (simple) */}
-        <View style={styles.dotsRow}>
-          {featuredJobs.map((_, i) => (
-            <View key={i} style={[styles.dot, i === 0 && styles.dotActive]} />
-          ))}
-        </View>
-
-        {/* Popular Jobs */}
-        <View style={[styles.sectionHeader, { marginTop: 18 }]}>
-          <Text style={styles.sectionTitle}>Popular Jobs</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Browse', { screen: 'BrowseRoot' })}>
-            <Text style={styles.seeAll}>See all</Text>
-          </TouchableOpacity>
-        </View>
-
-        <FlatList
-          data={popularJobs}
-          keyExtractor={(item) => item.id}
-          numColumns={2}
-          columnWrapperStyle={{ justifyContent: 'space-between', marginBottom: 12 }}
-          showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => navigation.navigate('JobDetails', { jobId: item.id })} activeOpacity={0.8}>
-              <PopularCard item={item} />
-            </TouchableOpacity>
-          )}
-          contentContainerStyle={{ paddingBottom: 40 }}
-        />
-      </ScrollView>
+        )}
+        contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 20, paddingTop: 20 }}
+        ListHeaderComponent={renderHeader}
+        ListEmptyComponent={
+          featuredLoading || popularLoading ? (
+            <ActivityIndicator size="large" color="#2E5AAC" style={{ margin: 16 }} />
+          ) : (
+            <View style={{ alignItems: 'center', paddingTop: 40 }}>
+              <Ionicons name="search" size={48} color="#9AA0A6" />
+              <Text style={{ fontSize: 18, fontWeight: '700', marginTop: 12 }}>No results</Text>
+              <Text style={{ color: '#8D99A6', textAlign: 'center', maxWidth: 340 }}>No jobs found. Try different keywords or filters.</Text>
+            </View>
+          )
+        }
+      />
 
       {/* Bottom Tab Bar is now part of the global MainTabs navigator */}
     </SafeAreaView>
