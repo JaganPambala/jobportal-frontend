@@ -288,7 +288,6 @@ function EmployeeProfileScreen({ navigation }) {
           </View>
         </View>
       </Modal>
-
       {/* Skills */}
       <View style={styles.section}>
         <SectionHeader
@@ -393,7 +392,7 @@ function EmployeeProfileScreen({ navigation }) {
       <View style={styles.section}>
         <SectionHeader
           title="Interested Categories"
-          onEdit={() => navigation.navigate("Categories")}
+          onEdit={() => navigation.navigate('Browse', { screen: 'BrowseRoot' })}
         />
 
         <View style={styles.skillsRow}>

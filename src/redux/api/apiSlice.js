@@ -3,35 +3,21 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 // Update baseUrl to your backend API
 const baseUrl = "http://10.0.2.2:5000";
 
-// Custom baseQuery that handles FormData properly
-const baseQueryWithFormData = fetchBaseQuery({
-  baseUrl,
-  prepareHeaders: (headers, { getState }) => {
-    try {
-      const token = getState().auth?.token;
-      if (token) headers.set('authorization', `Bearer ${token}`);
-    } catch (e) {
-      // ignore if getState not available
-    }
-    return headers;
-  },
-});
-
-// Wrapper to handle FormData without stringifying
-const baseQueryWrapper = async (args, api, extraOptions) => {
-  // If body is FormData, don't let fetchBaseQuery stringify it
-  if (args.body instanceof FormData) {
-    // Remove Content-Type header so fetch can set it with boundary
-    const clonedArgs = { ...args };
-    return baseQueryWithFormData(clonedArgs, api, extraOptions);
-  }
-  return baseQueryWithFormData(args, api, extraOptions);
-};
-
 export const api = createApi({
   reducerPath: 'reduxApi',
-  tagTypes: ['Job', 'Applicants', 'EmployeeMe', 'Applications', 'Category'],
-  baseQuery: baseQueryWrapper,
+  tagTypes: ['Job', 'Applicants', 'EmployeeMe', 'Applications', 'Saved'],
+  baseQuery: fetchBaseQuery({
+    baseUrl,
+    prepareHeaders: (headers, { getState }) => {
+      try {
+        const token = getState().auth?.token;
+        if (token) headers.set('authorization', `Bearer ${token}`);
+      } catch (e) {
+        // ignore if getState not available
+      }
+      return headers;
+    },
+  }),
   endpoints: (builder) => ({
     getRoles: builder.query({
       query: () => '/roles',
@@ -351,6 +337,58 @@ export const api = createApi({
       },
       invalidatesTags: (result, error, { jobId }) => [{ type: 'Applicants', id: jobId }, { type: 'Applications', id: 'LIST' }],
     }),
+    // Saved jobs endpoints
+    getSavedJobs: builder.query({
+      query: () => '/saved',
+      providesTags: (result) =>
+        result && result.savedJobs
+          ? [{ type: 'Saved', id: 'LIST' }, ...result.savedJobs.map((s) => ({ type: 'Saved', id: s.savedId }))]
+          : [{ type: 'Saved', id: 'LIST' }],
+    }),
+    saveJob: builder.mutation({
+      query: (jobId) => ({ url: `/saved/${jobId}`, method: 'POST' }),
+      async onQueryStarted(jobId, { dispatch, queryFulfilled }) {
+        // optimistic update: add a temporary saved entry
+        const patchResult = dispatch(
+          api.util.updateQueryData('getSavedJobs', undefined, (draft) => {
+            if (!draft) return;
+            const maybe = Array.isArray(draft.savedJobs) ? draft.savedJobs : [];
+            maybe.unshift({ savedId: `temp-${jobId}`, savedAt: new Date().toISOString(), jobId, jobTitle: 'Saving…', location: '', jobType: '', companyName: '', companyLogo: '', salaryRange: { min: 0, max: 0 }, applicationStatus: 'Applied' });
+            // Ensure shape: draft.savedJobs is array
+            if (!Array.isArray(draft.savedJobs)) draft.savedJobs = maybe;
+          })
+        );
+        try {
+          const { data } = await queryFulfilled;
+          // on success, replace the temp id entry with the real server response by invalidating
+          dispatch(api.util.invalidateTags([{ type: 'Saved', id: 'LIST' }]));
+        } catch (err) {
+          patchResult.undo();
+        }
+      },
+      invalidatesTags: [{ type: 'Saved', id: 'LIST' }],
+    }),
+    unsaveJob: builder.mutation({
+      // Backend expects DELETE /saved/:jobId (send jobId param in URL)
+      query: (jobId) => ({ url: `/saved/${jobId}`, method: 'DELETE' }),
+      async onQueryStarted(jobId, { dispatch, queryFulfilled }) {
+        const patchResult = dispatch(
+          api.util.updateQueryData('getSavedJobs', undefined, (draft) => {
+            if (!draft) return;
+            if (Array.isArray(draft.savedJobs)) {
+              const idx = draft.savedJobs.findIndex((s) => s.jobId === jobId || s.savedId === jobId);
+              if (idx !== -1) draft.savedJobs.splice(idx, 1);
+            }
+          })
+        );
+        try {
+          await queryFulfilled;
+        } catch (err) {
+          patchResult.undo();
+        }
+      },
+      invalidatesTags: [{ type: 'Saved', id: 'LIST' }],
+    }),
   }),
 });
 
@@ -391,4 +429,7 @@ export const {
   useAddEmployeeEducationMutation,
   useUpdateEmployeeEducationMutation,
   useDeleteEmployeeEducationMutation,
+  useGetSavedJobsQuery,
+  useSaveJobMutation,
+  useUnsaveJobMutation,
 } = api;

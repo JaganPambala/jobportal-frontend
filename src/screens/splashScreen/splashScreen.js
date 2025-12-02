@@ -20,11 +20,24 @@ const SplashScreen = ({ navigation }) => {
     const check = async () => {
       try {
         // Order: if token exists -> go to Home
-        const token = await AsyncStorage.getItem('token');
-        if (token) {
-          navigation.replace('Home');
-          return;
-        }
+          const token = await AsyncStorage.getItem('token');
+          if (token) {
+            // Try to determine user role from stored user in AsyncStorage and route accordingly
+            try {
+              const userJson = await AsyncStorage.getItem('user');
+              const user = userJson ? JSON.parse(userJson) : null;
+              const role = (user?.role || '').toLowerCase();
+              if (role === 'employer') {
+                navigation.replace('EmployerDashboard');
+              } else {
+                navigation.replace('Home');
+              }
+            } catch (e) {
+              // if parsing fails, fallback to generic Home
+              navigation.replace('Home');
+            }
+            return;
+          }
 
         // No token: check whether onboarding was seen before
         const seen = await AsyncStorage.getItem('seenOnboarding');

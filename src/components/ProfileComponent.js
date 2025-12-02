@@ -80,10 +80,21 @@ export default function ProfileMenu({ navigation, useIconTrigger = false }) {
                 <TouchableOpacity
                   onPress={() => {
                     setOpen(false);
-                    const role = auth?.role || user?.role;
+                    // Normalize role comparison to avoid case differences from backend
+                    const rawRole = auth?.role || user?.role || '';
+                    const role = typeof rawRole === 'string' ? rawRole.toLowerCase() : '';
+                    if (__DEV__) console.log('ProfileMenu: Open profile for role=', role);
+
+                    // Prefer EmployerProfile (full profile screen) if available, fallback to EmployerDashboard
                     if (role === 'employer') {
-                      // Employer profile screen is not implemented yet; open EmployerDashboard for now
-                      navigation.navigate('EmployerDashboard');
+                      // Try navigating to EmployerProfile first (preferred)
+                      try {
+                        // Use replace so the previous employee stack doesn't remain in history
+                        navigation.replace('EmployerProfile');
+                      } catch (e) {
+                        // Fallback to EmployerDashboard if EmployerProfile isn't registered in the current navigator
+                        navigation.replace('EmployerDashboard');
+                      }
                     } else {
                       navigation.navigate('EmployeeProfile');
                     }
@@ -99,6 +110,7 @@ export default function ProfileMenu({ navigation, useIconTrigger = false }) {
               {[
                 ["Personal Info", "PersonalInfo"],
                 ["Applications", "EmployeeAplications"],
+                ["Saved Jobs", "Saved"],
                 ["Proposals", "Proposals"],
                 ["Resumes", "Resumes"],
                 ["Portfolio", "Portfolio"],

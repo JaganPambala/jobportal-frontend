@@ -13,6 +13,7 @@ import CategoriesScreen from "./src/screens/Categories/CategoriesScreen.js";
 import SubCategoriesScreen from "./src/screens/Categories/SubCategoriesScreen.js";
 import CategoryJobsScreen from "./src/screens/Categories/CategoryJobScreen.js";
 import  HomeScreen from "./src/screens/Home/home.js";
+import MainTabs from './src/navigation/MainTabs';
 import JobDetailsScreen from "./src/screens/JobDetails/JobDetails.js";
 import EmployerDashboard from "./src/screens/employerDashboard/employerDashboard.js";
 import CreateEmployerProfile from "./src/screens/employerDashboard/CreateProfile.js";
@@ -24,6 +25,7 @@ import UploadResumeScreen from "./src/screens/Employee/UploadResume.js";
 import EditPersonalInfo from "./src/screens/Employee/EditPersonalInfo.js";
 import ApplySuccessScreen from "./src/screens/Apply/succeses.js";
 import EmployeeAplications from "./src/screens/Apply/EmployeeAplications.js";
+import SavedJobsScreen from "./src/screens/Saved/Saved.js";
 import SearchScreen from "./src/screens/Search/SearchScreen.js";
 import EmployerProfileScreen from "./src/screens/employerDashboard/EmployerProfile.js";
 const RootStack = createNativeStackNavigator();
@@ -43,7 +45,7 @@ function AuthStackScreen() {
       <AuthStack.Screen name="Categories" component={CategoriesScreen} />
       <AuthStack.Screen name="SubCategories" component={SubCategoriesScreen} />
       <AuthStack.Screen name="CategoryJobs" component={CategoryJobsScreen} />
-      <AuthStack.Screen name="JobDetails" component={JobDetailsScreen} />
+      {/* JobDetails is handled by RootStack to keep a single shared screen */}
       <AuthStack.Screen name="ApplySuccess" component={ApplySuccessScreen} />
     </AuthStack.Navigator>
   );
@@ -54,15 +56,14 @@ function EmployeeStackScreen() {
     <EmployeeStack.Navigator screenOptions={{ headerShown: false }}>
       <EmployeeStack.Screen name="Home" component={HomeScreen} />
       <EmployeeStack.Screen name="JobPreferences" component={JobPreferencesScreen} />
-      <EmployeeStack.Screen name="JobDetails" component={JobDetailsScreen} />
+      {/* JobDetails is handled by RootStack to keep a single shared screen */}
       <EmployeeStack.Screen name="EmployeeProfile" component={EmployeeProfileScreen} />
       <EmployeeStack.Screen name="UploadResume" component={UploadResumeScreen} />
       <EmployeeStack.Screen name="EditPersonalInfo" component={EditPersonalInfo} />
       <EmployeeStack.Screen name="ApplySuccess" component={ApplySuccessScreen} />
       <EmployeeStack.Screen name="EmployeeAplications" component={EmployeeAplications} />
       <EmployeeStack.Screen name="Categories" component={CategoriesScreen} />
-      <EmployeeStack.Screen name="SubCategories" component={SubCategoriesScreen} />
-      <EmployeeStack.Screen name="CategoryJobs" component={CategoryJobsScreen} />
+      {/* SubCategories and CategoryJobs are available under the Browse tab to keep navigation within the tab */}
       <EmployeeStack.Screen name="Search" component={SearchScreen} />
     </EmployeeStack.Navigator>
   );
@@ -79,9 +80,8 @@ function EmployerStackScreen() {
       <EmployerStack.Screen name="ApplicantsList" component={ApplicantsListScreen} />
       <EmployerStack.Screen name="Search" component={SearchScreen} />
       <EmployerStack.Screen name="Categories" component={CategoriesScreen} />
-      <EmployerStack.Screen name="SubCategories" component={SubCategoriesScreen} />
-      <EmployerStack.Screen name="CategoryJobs" component={CategoryJobsScreen} />
-      <EmployerStack.Screen name="JobDetails" component={JobDetailsScreen} />
+      {/* SubCategories and CategoryJobs are available under Browse tab */}
+      {/* JobDetails is handled by RootStack to keep a single shared screen */}
     </EmployerStack.Navigator>
   );
 }
@@ -93,18 +93,30 @@ export default function App() {
 
   return (
     <NavigationContainer>
-      <RootStack.Navigator screenOptions={{ headerShown: false }}>
-        {!isAuthenticated && (
-          <RootStack.Screen name="Auth" component={AuthStackScreen} />
-        )}
+      <RootStack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
+          <RootStack.Screen name="Splash" component={SplashScreen} />
+          <RootStack.Screen name="Onboarding" component={Onboarding} />
+          <RootStack.Screen name="SelectRole" component={SelectRoleScreen} />
+          <RootStack.Screen name="Signup" component={SignupScreen} />
+          <RootStack.Screen name="Login" component={LoginScreen} /> 
+          <RootStack.Screen name="JobPreferences" component={JobPreferencesScreen} />
+          <RootStack.Screen name="Categories" component={CategoriesScreen} />
+          <RootStack.Screen name="Home" component={MainTabs} />
+          <RootStack.Screen name="JobDetails" component={JobDetailsScreen} />
 
-        {isAuthenticated && role === 'employer' && (
-          <RootStack.Screen name="Employer" component={EmployerStackScreen} />
-        )}
-
-        {isAuthenticated && role !== 'employer' && (
-          <RootStack.Screen name="Employee" component={EmployeeStackScreen} />
-        )}
+          <RootStack.Screen name="EmployerDashboard" component={EmployerDashboard} />
+          <RootStack.Screen name="EmployerProfile" component={EmployerProfileScreen} />
+          <RootStack.Screen name="CreateEmployerProfile" component={CreateEmployerProfile} />
+          <RootStack.Screen name="PostJob" component={PostJobScreen} />
+          <RootStack.Screen name="ManageJobs" component={ManageJobsScreen} />
+          <RootStack.Screen name="ApplicantsList" component={ApplicantsListScreen} />
+          <RootStack.Screen name="EmployeeProfile" component={EmployeeProfileScreen} />
+          <RootStack.Screen name="UploadResume" component={UploadResumeScreen} />
+          <RootStack.Screen name="EditPersonalInfo" component={EditPersonalInfo} />
+        <RootStack.Screen name="ApplySuccess" component={ApplySuccessScreen} />
+        <RootStack.Screen name="EmployeeAplications" component={EmployeeAplications} />
+          <RootStack.Screen name="Search" component={SearchScreen} />
+        {/* Saved screen moved under MainTabs (Bottom Tabs) */}
       </RootStack.Navigator>
     </NavigationContainer>
   );

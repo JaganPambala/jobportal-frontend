@@ -1,10 +1,41 @@
 // EmployerDashboard.js
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, BackHandler, Alert, Platform } from "react-native";
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import ProfileMenu from "../../components/ProfileComponent";
 
 export default function EmployerDashboard({ navigation }) {
+  // Only handle back hardware press when EmployerDashboard is focused. This ensures navigating
+  // to child screens (e.g., ManageJobs) still uses normal navigation.goBack().
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        // Show an exit confirmation so the employer doesn't accidentally go back to employee screens
+        Alert.alert(
+          'Exit App',
+          'You are viewing employer dashboard. Do you want to exit the app?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Exit',
+              style: 'destructive',
+              onPress: () => BackHandler.exitApp(),
+            },
+          ],
+          { cancelable: true }
+        );
+        // Return true to indicate we handled the event and prevent default back navigation
+        return true;
+      };
+
+      if (Platform.OS === 'android') {
+        const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+        return () => subscription.remove();
+      }
+      return undefined;
+    }, [])
+  );
   return (
     <ScrollView style={styles.container}>
       <View style={styles.headerRowTop}>

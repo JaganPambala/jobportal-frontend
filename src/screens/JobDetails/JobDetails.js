@@ -10,7 +10,8 @@ import {
   Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useGetJobByIdQuery, useApplyJobMutation } from "../../redux/api/apiSlice";
+import { useGetJobByIdQuery, useApplyJobMutation, useGetSavedJobsQuery, useSaveJobMutation, useUnsaveJobMutation } from "../../redux/api/apiSlice";
+import useAuth from '../../hooks/useAuth';
 
 const baseUrl = 'http://10.0.2.2:5000';
 const getFullLogoUrl = (logoPath) => {
@@ -24,11 +25,20 @@ const JobDetailsScreen = ({ route, navigation }) => {
   const { jobId } = route.params;
 
   const { data: job, isLoading, isError, error, refetch } = useGetJobByIdQuery(jobId);
+  const { data: savedData } = useGetSavedJobsQuery();
+  const [saveJob, { isLoading: isSaving }] = useSaveJobMutation();
+  const [unsaveJob, { isLoading: isUnSaving }] = useUnsaveJobMutation();
   const [applyJob, { isLoading: isApplying }] = useApplyJobMutation();
+  const { user } = useAuth();
+  const role = (user?.role || '').toLowerCase();
 
   const [activeTab, setActiveTab] = useState("Requirement");
 
   const handleApplyJob = async () => {
+    if (role === 'employer') {
+      Alert.alert('Not allowed', 'Employers cannot apply for jobs');
+      return;
+    }
     try {
       await applyJob(jobId).unwrap();
       // Navigate to success screen and pass the job title
@@ -73,8 +83,26 @@ const JobDetailsScreen = ({ route, navigation }) => {
           <Ionicons name="chevron-back" size={30} color="#fff" />
         </TouchableOpacity>
 
-        <TouchableOpacity>
-          <Ionicons name="bookmark-outline" size={26} color="#fff" />
+        <TouchableOpacity onPress={async () => {
+          try {
+            // find saved entry
+            const savedEntry = Array.isArray(savedData?.savedJobs) ? savedData.savedJobs.find((s) => s.jobId === (job._id || job.id)) : null;
+            if (savedEntry) {
+              // Backend expects a jobId in the route; send jobId to unsave
+              await unsaveJob(savedEntry.jobId || savedEntry.savedId).unwrap();
+            } else {
+              await saveJob(job._id || job.id).unwrap();
+            }
+          } catch (err) {
+            const message = err?.data?.message || err?.message || 'Failed to toggle saved job';
+            Alert.alert('Error', message);
+          }
+        }}>
+          { (isSaving || isUnSaving) ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Ionicons name={Array.isArray(savedData?.savedJobs) && savedData.savedJobs.find((s) => s.jobId === (job._id || job.id)) ? "bookmark" : "bookmark-outline"} size={26} color="#fff" />
+          ) }
         </TouchableOpacity>
 
         {/* Company Logo */}
@@ -135,17 +163,19 @@ const JobDetailsScreen = ({ route, navigation }) => {
       </View>
 
       {/* ------------------ APPLY BUTTON ------------------ */}
-      <TouchableOpacity
-        style={[styles.applyBtn, isApplying && { opacity: 0.7 }]}
-        onPress={handleApplyJob}
-        disabled={isApplying}
-      >
-        {isApplying ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.applyBtnText}>Apply Now</Text>
-        )}
-      </TouchableOpacity>
+      {role !== 'employer' && (
+        <TouchableOpacity
+          style={[styles.applyBtn, isApplying && { opacity: 0.7 }]}
+          onPress={handleApplyJob}
+          disabled={isApplying}
+        >
+          {isApplying ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.applyBtnText}>Apply Now</Text>
+          )}
+        </TouchableOpacity>
+      )}
     </ScrollView>
   );
 };

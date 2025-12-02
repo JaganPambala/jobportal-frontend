@@ -1,5 +1,5 @@
 // HomeScreen.jsx
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   ScrollView,
 } from "react-native";
 import { Ionicons, Entypo } from "@expo/vector-icons";
+import { useIsFocused } from '@react-navigation/native';
 import useAuth from '../../hooks/useAuth';
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -124,6 +125,14 @@ function HomeScreen({ navigation }) {
   const [query, setQuery] = useState("");
   const [selectedFilter, setSelectedFilter] = useState(false);
   const { user, firstName } = useAuth();
+  React.useEffect(() => {
+    // If an employer somehow reached the employee Home component, redirect them to their dashboard
+    const role = (user?.role || '').toLowerCase();
+    if (role === 'employer') {
+      // Replace this view so the employer doesn't get the employee UI
+      navigation.replace('EmployerDashboard');
+    }
+  }, [navigation, user]);
   const carouselRef = useRef(null);
 
   // RTK Query hooks for featured and popular jobs
@@ -223,7 +232,7 @@ function HomeScreen({ navigation }) {
         {/* Popular Jobs */}
         <View style={[styles.sectionHeader, { marginTop: 18 }]}>
           <Text style={styles.sectionTitle}>Popular Jobs</Text>
-          <TouchableOpacity onPress={() => navigation.navigate("Categories")}>
+          <TouchableOpacity onPress={() => navigation.navigate('Browse', { screen: 'BrowseRoot' })}>
             <Text style={styles.seeAll}>See all</Text>
           </TouchableOpacity>
         </View>
@@ -243,25 +252,7 @@ function HomeScreen({ navigation }) {
         />
       </ScrollView>
 
-      {/* Bottom Tab Bar (static) */}
-      <View style={styles.tabBar}>
-        <TouchableOpacity style={styles.tabItem}>
-          <Ionicons name="home" size={22} color="#2E5AAC" />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem}>
-          <Ionicons name="mail-outline" size={22} color="#9AA0A6" />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem}>
-          <Ionicons name="bookmark-outline" size={22} color="#9AA0A6" />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem}
-        onPress={() => navigation.navigate("Categories")}>
-          <Ionicons name="grid-outline" size={22} color="#9AA0A6" />
-        </TouchableOpacity>
-      </View>
+      {/* Bottom Tab Bar is now part of the global MainTabs navigator */}
     </SafeAreaView>
   );
 }
@@ -353,22 +344,7 @@ const styles = StyleSheet.create({
   popCompany: { color: "#9AA0A6", marginBottom: 8 },
   popSalary: { fontWeight: "700", color: "#222" },
 
-  tabBar: {
-    position: "absolute",
-    bottom: 18,
-    left: 20,
-    right: 20,
-    height: 62,
-    borderRadius: 14,
-    backgroundColor: "#fff",
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    elevation: 6,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-  },
+  // tabBar styles are now handled by MainTabs navigator
   tabItem: { alignItems: "center", justifyContent: "center" },
 });
 
