@@ -98,7 +98,7 @@ function FeaturedCard({ item, navigation, user }) {
         </TouchableOpacity>
       )}
       {user && user.role === 'employer' && !user.companyName && (
-        <TouchableOpacity onPress={() => navigation.navigate('CreateEmployerProfile')} style={{ marginBottom: 12 }}>
+        <TouchableOpacity onPress={() => navigation.navigate('Employer', { screen: 'CreateEmployerProfile' })} style={{ marginBottom: 12 }}>
           <Text style={{ color: '#2E5AAC', fontWeight: '700' }}>Complete company profile</Text>
         </TouchableOpacity>
       )}
@@ -126,13 +126,19 @@ function HomeScreen({ navigation }) {
   const [selectedFilter, setSelectedFilter] = useState(false);
   const { user, firstName } = useAuth();
   React.useEffect(() => {
-    // If an employer somehow reached the employee Home component, redirect them to their dashboard
+    // Redirect only when the user's role changes and we're not already on the Employer stack
     const role = (user?.role || '').toLowerCase();
     if (role === 'employer') {
-      // Replace this view so the employer doesn't get the employee UI
-      navigation.replace('EmployerDashboard');
+      try {
+        const current = navigation.getCurrentRoute && navigation.getCurrentRoute();
+        if (!current || current.name !== 'Employer') {
+          navigation.replace('Employer');
+        }
+      } catch (e) {
+        navigation.replace('Employer');
+      }
     }
-  }, [navigation, user]);
+  }, [user?.role]);
   const carouselRef = useRef(null);
 
   // RTK Query hooks for featured and popular jobs
@@ -171,8 +177,7 @@ function HomeScreen({ navigation }) {
             <Text style={styles.welcomeSmall}>Welcome Back!</Text>
             <Text style={styles.welcomeName}>{firstName} 👋</Text>
           </View>
-
-      
+          <ProfileMenu navigation={navigation} />
         </View>
 
         {/* Search */}
@@ -190,7 +195,7 @@ function HomeScreen({ navigation }) {
             />
           </TouchableOpacity>
 
-          <ProfileMenu navigation={navigation} useIconTrigger />
+          {/* Avatar/ menu in header now — removed duplicate from search row */}
         </View>
 
         {/* Featured Jobs carousel */}

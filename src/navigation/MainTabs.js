@@ -61,12 +61,22 @@ export default function MainTabs({ navigation }) {
   // If the current user is an employer, we should not show the employee MainTabs.
   // Redirect them to the employer dashboard instead so they don't get employee screens.
   useEffect(() => {
+    // Only run when the user role changes; avoid including `navigation` in deps to prevent
+    // re-running due to navigation object identity changes across renders
     const role = (user?.role || '').toLowerCase();
     if (role === 'employer') {
-      // replace the current screen so the employer doesn't get the employee tabs
-      navigation.replace('EmployerDashboard');
+      try {
+        // If we're already on Employer stack, don't replace to avoid loops
+        const currentRoute = navigation.getCurrentRoute && navigation.getCurrentRoute();
+        if (!currentRoute || currentRoute.name !== 'Employer') {
+          navigation.replace('Employer');
+        }
+      } catch (e) {
+        // Best effort: if anything goes wrong, still attempt to navigate (non-fatal)
+        navigation.replace('Employer');
+      }
     }
-  }, [navigation, user]);
+  }, [user?.role]);
   return (
     <Tab.Navigator
       initialRouteName="HomeTab"

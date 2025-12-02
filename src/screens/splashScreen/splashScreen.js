@@ -28,13 +28,13 @@ const SplashScreen = ({ navigation }) => {
               const user = userJson ? JSON.parse(userJson) : null;
               const role = (user?.role || '').toLowerCase();
               if (role === 'employer') {
-                navigation.replace('EmployerDashboard');
+                navigation.replace('Employer');
               } else {
-                navigation.replace('Home');
+                navigation.replace('Employee');
               }
             } catch (e) {
-              // if parsing fails, fallback to generic Home
-              navigation.replace('Home');
+              // if parsing fails, fallback to employee home
+              navigation.replace('Employee');
             }
             return;
           }
@@ -64,7 +64,7 @@ const SplashScreen = ({ navigation }) => {
       {/** --------- VARIANT A: use absolute file path (useful for this environment) --------- */}
       {/* If you want to use the uploaded file path directly: */}
       <Image
-        source={{ uri: "file:///mnt/data/Start.jpg" }}
+        source={{ uri: "https://res.cloudinary.com/dgkcumi4q/image/upload/v1764669490/Group_218_hrvxcj.png" }}
         style={styles.fullscreenImage}
         resizeMode="cover"
       />

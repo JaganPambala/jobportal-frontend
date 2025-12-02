@@ -54,7 +54,7 @@ function AuthStackScreen() {
 function EmployeeStackScreen() {
   return (
     <EmployeeStack.Navigator screenOptions={{ headerShown: false }}>
-      <EmployeeStack.Screen name="Home" component={HomeScreen} />
+      <EmployeeStack.Screen name="Home" component={MainTabs} />
       <EmployeeStack.Screen name="JobPreferences" component={JobPreferencesScreen} />
       {/* JobDetails is handled by RootStack to keep a single shared screen */}
       <EmployeeStack.Screen name="EmployeeProfile" component={EmployeeProfileScreen} />
@@ -94,25 +94,20 @@ export default function App() {
   return (
     <NavigationContainer>
       <RootStack.Navigator initialRouteName="Splash" screenOptions={{ headerShown: false }}>
-          <RootStack.Screen name="Splash" component={SplashScreen} />
+              <RootStack.Screen name="Splash" component={SplashScreen} />
           <RootStack.Screen name="Onboarding" component={Onboarding} />
           <RootStack.Screen name="SelectRole" component={SelectRoleScreen} />
           <RootStack.Screen name="Signup" component={SignupScreen} />
           <RootStack.Screen name="Login" component={LoginScreen} /> 
           <RootStack.Screen name="JobPreferences" component={JobPreferencesScreen} />
           <RootStack.Screen name="Categories" component={CategoriesScreen} />
-          <RootStack.Screen name="Home" component={MainTabs} />
+              {/* Authentication & role-based stacks */}
+              <RootStack.Screen name="Auth" component={AuthStackScreen} />
+              <RootStack.Screen name="Employee" component={EmployeeStackScreen} />
+              <RootStack.Screen name="Employer" component={EmployerStackScreen} />
           <RootStack.Screen name="JobDetails" component={JobDetailsScreen} />
 
-          <RootStack.Screen name="EmployerDashboard" component={EmployerDashboard} />
-          <RootStack.Screen name="EmployerProfile" component={EmployerProfileScreen} />
-          <RootStack.Screen name="CreateEmployerProfile" component={CreateEmployerProfile} />
-          <RootStack.Screen name="PostJob" component={PostJobScreen} />
-          <RootStack.Screen name="ManageJobs" component={ManageJobsScreen} />
-          <RootStack.Screen name="ApplicantsList" component={ApplicantsListScreen} />
-          <RootStack.Screen name="EmployeeProfile" component={EmployeeProfileScreen} />
-          <RootStack.Screen name="UploadResume" component={UploadResumeScreen} />
-          <RootStack.Screen name="EditPersonalInfo" component={EditPersonalInfo} />
+          {/* Note: employer and employee routes are handled by the Employee/Employer stacks */}
         <RootStack.Screen name="ApplySuccess" component={ApplySuccessScreen} />
         <RootStack.Screen name="EmployeeAplications" component={EmployeeAplications} />
           <RootStack.Screen name="Search" component={SearchScreen} />

@@ -65,8 +65,13 @@ function EmployeeProfileScreen({ navigation }) {
 
   // All effects BEFORE early returns
   useEffect(() => {
-    setLocalSkills(user?.skills || []);
-  }, [user?.skills]);
+    const incoming = user?.skills || [];
+    // Avoid setting state if incoming skills array is identical (by shallow equality)
+    const isSame = Array.isArray(incoming) && Array.isArray(localSkills) && incoming.length === localSkills.length && incoming.every((s, i) => s === localSkills[i]);
+    if (!isSame) {
+      setLocalSkills(Array.isArray(incoming) ? [...incoming] : []);
+    }
+  }, [user?.skills, localSkills]);
 
   if (isLoading) return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>Loading profile...</Text></View>;
   if (isError) return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>Failed to load profile</Text></View>;

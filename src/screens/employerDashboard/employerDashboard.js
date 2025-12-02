@@ -43,7 +43,7 @@ export default function EmployerDashboard({ navigation }) {
           <Text style={styles.title}>Welcome Employer 👋</Text>
           <Text style={styles.subtitle}>Manage & post jobs easily</Text>
         </View>
-        <ProfileMenu navigation={navigation} useIconTrigger={true} />
+        <ProfileMenu navigation={navigation} />
       </View>
 
       {/* Quick Actions */}
