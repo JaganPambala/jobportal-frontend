@@ -24,7 +24,7 @@ export default function ApplySuccessScreen({ navigation, route }) {
       {/* Track Button */}
       <TouchableOpacity
         style={styles.trackBtn}
-        onPress={() => navigation.navigate("Applications")}
+        onPress={() => navigation.navigate("EmployeeApplications")}
       >
         <Text style={styles.trackBtnText}>Track</Text>
       </TouchableOpacity>
@@ -32,7 +32,7 @@ export default function ApplySuccessScreen({ navigation, route }) {
       {/* Browse Jobs */}
       <TouchableOpacity
         style={styles.browseBtn}
-        onPress={() => navigation.navigate("JobsList")}
+        onPress={() => navigation.navigate("Home")}
       >
         <Text style={styles.browseText}>Browse Jobs</Text>
       </TouchableOpacity>
