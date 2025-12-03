@@ -63,10 +63,10 @@ function EmployeeProfileScreen({ navigation }) {
   const [localSkills, setLocalSkills] = useState(user?.skills || []);
   const [newSkill, setNewSkill] = useState('');
 
-  // All effects BEFORE early returns
+
   useEffect(() => {
     const incoming = user?.skills || [];
-    // Avoid setting state if incoming skills array is identical (by shallow equality)
+    
     const isSame = Array.isArray(incoming) && Array.isArray(localSkills) && incoming.length === localSkills.length && incoming.every((s, i) => s === localSkills[i]);
     if (!isSame) {
       setLocalSkills(Array.isArray(incoming) ? [...incoming] : []);

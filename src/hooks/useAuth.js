@@ -4,12 +4,11 @@ import { useMemo } from 'react';
 
 export default function useAuth() {
   const auth = useSelector((s) => s?.auth || {});
-  // Keep `user` as the exact object from the store (or null) to avoid creating a new
-  // object on each render which could cause effects to re-run when used as dependency.
+  
   const user = auth?.user && typeof auth.user === 'object' ? auth.user : null;
-  // For debugging: warn if the stored user is not an object (malformed)
+ 
   if (auth?.user && typeof auth.user !== 'object') {
-    // Only warn in dev
+   
     if (__DEV__) console.warn('Auth user is malformed (not an object). Coercing to {}', auth.user);
   }
   const token = auth?.token || null;
@@ -21,7 +20,7 @@ export default function useAuth() {
 
   return {
     auth,
-    // user: null when not authenticated
+  
     user,
     token,
     displayName,

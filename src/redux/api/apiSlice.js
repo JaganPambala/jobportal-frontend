@@ -232,7 +232,7 @@ export const api = createApi({
     }),
     // Employee's own applications, with pagination & status filters
     getEmployeeApplications: builder.query({
-      // params: { page, limit, status } where status can be comma-separated string
+      
       query: ({ page = 1, limit = 10, status } = {}) => {
         const parts = [];
         if (page) parts.push(`page=${encodeURIComponent(String(page))}`);

@@ -12,14 +12,14 @@ import useAuth from '../hooks/useAuth';
 import { getInitials } from '../utils/userUtils';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { logout as logoutAction } from "../redux/slices/authSlice";
-// getDisplayName removed (not used). Kept getInitials which is used to render initials.
+
 import { api as reduxApi } from "../redux/api/apiSlice";
-// import styles from "./profileMenuStyles"; // <- Styling separated
+
 
 export default function ProfileMenu({ navigation, useIconTrigger = false }) {
   const [open, setOpen] = useState(false);
   const dispatch = useDispatch();
-  // Prefer centralized hook so we always fetch user safely
+
   const { auth, user, displayName } = useAuth();
 
   // Deterministic color from a name so each user has a consistent fallback color
@@ -49,8 +49,7 @@ export default function ProfileMenu({ navigation, useIconTrigger = false }) {
       // ignore: if navigation isn't available, fallback to root handler
     }
     
-    // Redux state change will automatically trigger root navigator to show AuthStack
-    // No need to navigate explicitly; the root will re-evaluate based on auth state
+   
   };
 
   return (
