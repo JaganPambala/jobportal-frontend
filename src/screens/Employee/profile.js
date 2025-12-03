@@ -71,7 +71,7 @@ function EmployeeProfileScreen({ navigation }) {
     if (!isSame) {
       setLocalSkills(Array.isArray(incoming) ? [...incoming] : []);
     }
-  }, [user?.skills, localSkills]);
+  }, [user?.skills]);
 
   if (isLoading) return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>Loading profile...</Text></View>;
   if (isError) return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>Failed to load profile</Text></View>;

@@ -2,54 +2,33 @@ import React, { useEffect } from "react";
 import {
   View,
   Image,
-  ImageBackground,
   StyleSheet,
   StatusBar,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-
-// If you use a navigation library, uncomment
-// import { useNavigation } from '@react-navigation/native';
-
 const SplashScreen = ({ navigation }) => {
-  // const nav = useNavigation(); // if not passed as prop
 
   useEffect(() => {
     const check = async () => {
       try {
-        // Order: if token exists -> go to Home
-          const token = await AsyncStorage.getItem('token');
-          if (token) {
-            // Try to determine user role from stored user in AsyncStorage and route accordingly
-            try {
-              const userJson = await AsyncStorage.getItem('user');
-              const user = userJson ? JSON.parse(userJson) : null;
-              const role = (user?.role || '').toLowerCase();
-              if (role === 'employer') {
-                navigation.replace('Employer');
-              } else {
-                navigation.replace('Employee');
-              }
-            } catch (e) {
-              // if parsing fails, fallback to employee home
-              navigation.replace('Employee');
-            }
-            return;
-          }
+        const token = await AsyncStorage.getItem("token");
 
-        // No token: check whether onboarding was seen before
-        const seen = await AsyncStorage.getItem('seenOnboarding');
-        if (seen === 'true') {
-          navigation.replace('SelectRole');
-        } else {
-          navigation.replace('Onboarding');
+        if (token) {
+          const userJson = await AsyncStorage.getItem("user");
+          const user = userJson ? JSON.parse(userJson) : null;
+          const role = (user?.role || "").toLowerCase();
+
+          if (role === "employer") navigation.replace("Employer");
+          else navigation.replace("Employee");
+          return;
         }
+
+        const seen = await AsyncStorage.getItem("seenOnboarding");
+        navigation.replace(seen === "true" ? "SelectRole" : "Onboarding");
       } catch (e) {
-        console.warn('Splash navigation check failed', e);
-        // fallback to onboarding
-        navigation.replace('Onboarding');
+        navigation.replace("Onboarding");
       }
     };
 
@@ -57,28 +36,20 @@ const SplashScreen = ({ navigation }) => {
     return () => clearTimeout(timer);
   }, [navigation]);
 
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar hidden />
-      {/** --------- VARIANT A: use absolute file path (useful for this environment) --------- */}
-      {/* If you want to use the uploaded file path directly: */}
-      <Image
-        source={{ uri: "https://res.cloudinary.com/dgkcumi4q/image/upload/v1764669490/Group_218_hrvxcj.png" }}
-        style={styles.fullscreenImage}
-        resizeMode="cover"
-      />
 
-      {/** --------- VARIANT B (recommended): use local asset placed in ./assets/Start.jpg --------- */}
-      {/*
-      <ImageBackground
-        source={require("../assets/Start.jpg")}
-        style={styles.fullscreenImage}
-        resizeMode="cover"
-      >
-        // If you want to overlay anything (spinner, logo, etc.) put it here
-      </ImageBackground>
-      */}
+      {/* Centered Logo */}
+      <View style={styles.centerWrapper}>
+        <Image
+          source={{
+            uri: "https://res.cloudinary.com/dgkcumi4q/image/upload/v1764669490/Group_218_hrvxcj.png",
+          }}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+      </View>
     </SafeAreaView>
   );
 };
@@ -86,11 +57,20 @@ const SplashScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#163D5A", // fallback color while loading
+    backgroundColor: "#163D5A", // background color
   },
-  fullscreenImage: {
-    width: "100%",
-    height: "100%",
+
+  /* Wrapper to center the image */
+  centerWrapper: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  /* Small sized centered image */
+  logo: {
+    width: 180,   // adjust size here
+    height: 180,  // adjust size here
   },
 });
 

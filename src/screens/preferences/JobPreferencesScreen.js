@@ -59,7 +59,13 @@ const JobPreferencesScreen = ({ navigation }) => {
     try {
       const response = await updateJobPreferences(data).unwrap();
       
-      navigation.replace("Categories");
+      // After saving preferences, send user to the app Home (Employee stack)
+      // Using replace to clear the onboarding/preferences flow from the stack
+      if (navigation && typeof navigation.replace === 'function') {
+        navigation.replace('Employee');
+      } else if (navigation && typeof navigation.navigate === 'function') {
+        navigation.navigate('Employee');
+      }
     } catch (error) {
       console.error("Failed to update preferences:", error);
       // Optionally show error to user
